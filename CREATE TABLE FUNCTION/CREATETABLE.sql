@@ -39,10 +39,8 @@ CREATE TABLE ClassSlot (
   cID INTEGER,
   cDay VARCHAR(255),
   cTime VARCHAR(255),
-  iID INTEGER, -- ผู้สอน (FK)
-  tID INTEGER,  -- สถานที่สอน (FK)
+  tID INTEGER,
   PRIMARY KEY (cID),
-  FOREIGN KEY (iID) REFERENCES Instructor(iID),
   FOREIGN KEY (tID) REFERENCES TutoringCenter(tID)
 );
 
@@ -60,10 +58,8 @@ CREATE TABLE Enrollment (
 CREATE TABLE InstructorMedia (
   mediaID INTEGER,
   iID INTEGER,
-  mediaType VARCHAR(50) NOT NULL,
-  mediaURL VARCHAR(512) NOT NULL,
-  mediaTitle VARCHAR(255),
-  uploadDate DATE,
+  imageURL VARCHAR(512) NOT NULL,
+  videoURL VARCHAR(512) NOT NULL,
   PRIMARY KEY (mediaID),
   FOREIGN KEY (iID) REFERENCES Instructor(iID)
 );
