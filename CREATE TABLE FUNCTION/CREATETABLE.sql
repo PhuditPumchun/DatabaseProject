@@ -1,65 +1,80 @@
-﻿CREATE TABLE Subject (
-  sID INTEGER,
-  sName VARCHAR(255),
-  PRIMARY KEY (sID)
+﻿
+DROP TABLE IF EXISTS Enrollment;
+DROP TABLE IF EXISTS ClassSlot;
+DROP TABLE IF EXISTS CenterManager;
+DROP TABLE IF EXISTS InstructorMedia;
+DROP TABLE IF EXISTS Student;
+DROP TABLE IF EXISTS Instructor;
+DROP TABLE IF EXISTS TutoringCenter;
+DROP TABLE IF EXISTS Subject;
+
+
+CREATE TABLE Subject (
+sID INTEGER,
+sName VARCHAR(255),
+PRIMARY KEY (sID)
 );
 
 CREATE TABLE Instructor (
-  iID INTEGER,
-  iName VARCHAR(255),
-  sID INTEGER, -- 1 Instructor teaches 1 Subject
-  expYear INTEGER,
-  PRIMARY KEY (iID),
-  FOREIGN KEY (sID) REFERENCES Subject(sID)
+iID INTEGER,
+iName VARCHAR(255),
+sID INTEGER,
+expYear INTEGER,
+PRIMARY KEY (iID),
+FOREIGN KEY (sID) REFERENCES Subject(sID) ON DELETE SET NULL
 );
 
 CREATE TABLE TutoringCenter (
-  tID INTEGER,
-  tName VARCHAR(255),
-  address VARCHAR(255),
-  PRIMARY KEY (tID)
+tID INTEGER,
+tName VARCHAR(255),
+address VARCHAR(255),
+PRIMARY KEY (tID)
 );
 
 CREATE TABLE CenterManager (
-    tID INTEGER, -- PK, FK: 1 Center
-    iID INTEGER UNIQUE, -- FK: 1 Instructor (ใช้ UNIQUE เพื่อบังคับความสัมพันธ์ 1:1)
-    PRIMARY KEY (tID),
-    FOREIGN KEY (tID) REFERENCES TutoringCenter(tID),
-    FOREIGN KEY (iID) REFERENCES Instructor(iID)
+tID INTEGER,
+iID INTEGER UNIQUE,
+PRIMARY KEY (tID),
+FOREIGN KEY (tID) REFERENCES TutoringCenter(tID) ON DELETE CASCADE,
+FOREIGN KEY (iID) REFERENCES Instructor(iID) ON DELETE CASCADE
 );
--- --------------------------------------------------------------------------
 
 CREATE TABLE Student (
-  sID INTEGER,
-  sName VARCHAR(255),
-  PRIMARY KEY (sID)
+sID INTEGER,
+sName VARCHAR(255),
+sUsername VARCHAR(255),
+sPassword VARCHAR(255),
+PRIMARY KEY (sID)
 );
 
 CREATE TABLE ClassSlot (
-  cID INTEGER,
-  cDay VARCHAR(255),
-  cTime VARCHAR(255),
-  tID INTEGER,
-  PRIMARY KEY (cID),
-  FOREIGN KEY (tID) REFERENCES TutoringCenter(tID)
+cID INTEGER,
+cDay VARCHAR(255),
+cTime VARCHAR(255),
+studentNow INTEGER DEFAULT 0,
+studentMax INTEGER,
+tID INTEGER,
+PRIMARY KEY (cID),
+FOREIGN KEY (tID) REFERENCES TutoringCenter(tID) ON DELETE CASCADE
 );
 
 CREATE TABLE Enrollment (
-  sID INTEGER,
-  cID INTEGER,
-  enrollDate DATE,
-  paymentStatus VARCHAR(50),
-  feeAmount DECIMAL(10, 2),
-  PRIMARY KEY (sID, cID),
-  FOREIGN KEY (sID) REFERENCES Student(sID),
-  FOREIGN KEY (cID) REFERENCES ClassSlot(cID)
+sID INTEGER,
+cID INTEGER,
+enrollDate DATE,
+paymentStatus VARCHAR(50),
+feeAmount DECIMAL(10, 2),
+PRIMARY KEY (sID, cID),
+FOREIGN KEY (sID) REFERENCES Student(sID) ON DELETE CASCADE,
+FOREIGN KEY (cID) REFERENCES ClassSlot(cID) ON DELETE CASCADE
 );
 
 CREATE TABLE InstructorMedia (
-  mediaID INTEGER,
-  iID INTEGER,
-  imageURL VARCHAR(512) NOT NULL,
-  videoURL VARCHAR(512) NOT NULL,
-  PRIMARY KEY (mediaID),
-  FOREIGN KEY (iID) REFERENCES Instructor(iID)
+mediaID INTEGER,
+iID INTEGER,
+imageProfile VARCHAR(512) NOT NULL,
+rewardURL VARCHAR(512) NOT NULL,
+videoURL VARCHAR(512) NOT NULL,
+PRIMARY KEY (mediaID),
+FOREIGN KEY (iID) REFERENCES Instructor(iID) ON DELETE CASCADE
 );
