@@ -11,6 +11,20 @@ app.config['SECRET_KEY'] = 'your_super_secret_key_here'
 
 # ----------------------------------------------------
 # หน้า Login (GET) เหมือนเดิม
+# app.py
+
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash
+from LoginServices import LoginServices
+from InstructorDashboardServices import InstructorDashboardServices
+# แก้ไข: เปลี่ยนชื่อคลาสที่ Import ให้เป็น InstructorEditDashboardServices
+from InstructorEditDashboardServices import InstructorEditDashboardServices
+
+app = Flask(__name__)
+# ต้องมี SECRET_KEY สำหรับใช้ session
+app.config['SECRET_KEY'] = 'your_super_secret_key_here' 
+
+# ----------------------------------------------------
+# A. Login & API Routes
 # ----------------------------------------------------
 @app.route('/', methods=['GET'])
 @app.route('/login', methods=['GET'])
@@ -30,9 +44,6 @@ def api_login():
     response, status_code = LoginServices.authenticate(username, password, role)
     return jsonify(response), status_code
 
-# ----------------------------------------------------
-# Handler ของฟอร์ม login จากหน้า HTML (POST)
-# ----------------------------------------------------
 @app.route('/login', methods=['POST'])
 def handle_login_form():
     username = request.form.get('username')

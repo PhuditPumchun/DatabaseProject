@@ -1,0 +1,201 @@
+<!-- templates/instructor_dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Instructor Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f8f9fa; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        h1, h2 { color: #007bff; margin-top: 20px; }
+        .header-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header-section h1 { margin: 0; }
+
+        /* จัดกลุ่มปุ่มด้านขวา */
+        .header-buttons { display: flex; gap: 10px; }
+        
+        /* สไตล์ปุ่ม Edit/Update */
+        .update-btn {
+            padding: 8px 15px;
+            background-color: #28a745; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            text-decoration: none; 
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+        .update-btn:hover { background-color: #1e7e34; }
+
+        .logout-btn { 
+            padding: 8px 15px; 
+            background-color: #dc3545; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            text-decoration: none; 
+            font-size: 0.9em;
+        }
+        .logout-btn:hover { background-color: #c82333; }
+
+        /* การจัดเรียงหลัก: ใช้ Flexbox และ align-items: center */
+        .profile-section { 
+            display: flex; 
+            align-items: center; 
+            gap: 30px;
+            margin-top: 20px; 
+            padding: 15px; 
+            border: 1px solid #dee2e6; 
+            border-radius: 6px; 
+            background-color: #ffffff;
+        }
+        .profile-info { flex-grow: 1; }
+        .profile-info p { margin: 5px 0; }
+        
+        /* สไตล์สำหรับเส้นแบ่งและส่วน Reward */
+        .separator {
+            border-bottom: 1px solid #eee;
+            margin: 20px 0;
+        }
+
+        .reward-section { margin-top: 20px; }
+        .reward-section h4 { margin-top: 0; margin-bottom: 15px; color: #007bff;} 
+        .reward-image-container { 
+            max-width: 300px; 
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .reward-image-container img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        .reward-image-container .placeholder {
+            padding: 10px;
+            text-align: center;
+            color: #888;
+            font-size: 0.9em;
+            display: block;
+        }
+
+        /* สไตล์สำหรับรูป Profile */
+        .profile-image-container { 
+            width: 150px; height: 150px; border-radius: 50%; 
+            overflow: hidden; display: flex; justify-content: center;
+            align-items: center; background-color: #f0f0f0;
+            border: 3px solid #007bff; flex-shrink: 0;
+        }
+        .profile-image-container img { 
+            width: 100%; height: 100%; object-fit: cover; 
+        }
+        .profile-image-container .placeholder {
+            color: #888; font-size: 0.9em; text-align: center;
+        }
+
+        .center-management, .class-section { 
+            margin-top: 30px; padding: 15px; border: 1px solid #dee2e6; 
+            border-radius: 6px; background-color: #ffffff;
+        }
+        .center-management p { margin: 5px 0; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; }
+        th { background-color: #e9ecef; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-section">
+            <h1>Welcome, {{ instructor_name }}!</h1>
+            <div class="header-buttons">
+                <!-- ปุ่ม Edit: ลิงก์ไปหน้าแก้ไข (อยู่ทางซ้ายของ Logout) -->
+                <a href="{{ url_for('instructor_edit_dashboard') }}" class="update-btn">Edit Profile</a> 
+                <!-- ปุ่ม Logout -->
+                <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+            </div>
+        </div>
+        
+        <h2>Profile Overview</h2>
+        <div class="profile-section">
+            <div class="profile-info">
+                {% if data.profile %}
+                    <p><strong>Name:</strong> {{ instructor_name }}</p>
+                    <p><strong>Subject:</strong> {{ data.profile[1] if data.profile[1] else 'N/A' }}</p>
+                    <p><strong>Years of Experience:</strong> {{ data.profile[2] }}</p>
+                {% else %}
+                    <p>Profile information not available.</p>
+                {% endif %}
+            </div>
+            
+            <div class="profile-image-container">
+                {% if data.profile and data.profile[3] %}
+                    <img src="{{ data.profile[3] }}" alt="Profile Image of {{ instructor_name }}">
+                {% else %}
+                    <span class="placeholder">No Profile Image</span>
+                {% endif %}
+            </div>
+        </div>
+
+        
+        <div class="separator"></div>
+
+        
+        {% if data.profile %}
+            <div class="reward-section">
+                <h4>Reward and Certificate</h4>
+                <div class="reward-image-container">
+                    {% if data.profile[4] %}
+                        <img src="{{ data.profile[4] }}" alt="Reward or Certificate Image">
+                        <a href="{{ data.profile[4] }}" target="_blank" style="display: block; text-align: center; font-size: 0.8em; padding: 5px 0; text-decoration: none; color: #007bff;">[Open Full Image]</a>
+                    {% else %}
+                        <span class="placeholder">No reward or certificate image available.</span>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+
+
+        {% if data.managed_center %}
+            <h2 style="margin-top: 30px;">Center Management</h2>
+            <div class="center-management">
+                <p><strong>Center Name:</strong> {{ data.managed_center[0] }}</p>
+                <p><strong>Address:</strong> {{ data.managed_center[1] }}</p>
+            </div>
+        {% endif %}
+
+        <h2 style="margin-top: 30px;">Scheduled Classes</h2>
+        <div class="class-section">
+            {% if data.classes %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Day</th>
+                            <th>Time</th>
+                            <th>Center</th>
+                            <th>Enrolled</th>
+                            <th>Capacity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for class_slot in data.classes %}
+                            <tr>
+                                <td>{{ class_slot[0] }}</td>
+                                <td>{{ class_slot[1] }}</td>
+                                <td>{{ class_slot[4] }}</td>
+                                <td>{{ class_slot[2] }}</td>
+                                <td>{{ class_slot[3] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No classes found for your associated center.</p>
+            {% endif %}
+        </div>
+
+    </div>
+</body>
+</html>
