@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Instructor Profile</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f8f9fa; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        h1 { color: #007bff; margin-bottom: 25px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; }
+        .form-group input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        
+        .button-group { display: flex; justify-content: flex-start; gap: 10px; margin-top: 30px; }
+        
+        .save-btn {
+            padding: 10px 20px;
+            background-color: #28a745; /* สีเขียว */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .cancel-btn {
+            padding: 10px 20px;
+            background-color: #6c757d; /* สีเทา */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 1em;
+        }
+        .save-btn:hover { background-color: #1e7e34; }
+        .cancel-btn:hover { background-color: #5a6268; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Edit Profile and Center</h1>
+
+        <form method="POST" action="{{ url_for('update_instructor') }}">
+            
+            <input type="hidden" name="iID" value="{{ session.get('iID') }}">
+            {% if data.managed_center %}
+                <input type="hidden" name="tID" value="{{ data.managed_center[2] }}">
+            {% endif %}
+
+            <div class="form-group">
+                <label for="iName">Instructor Name:</label>
+                <input type="text" id="iName" name="iName" 
+                       value="{{ instructor_name }}" required>
+            </div>
+            
+            <hr>
+            
+            {% if data.managed_center %}
+                <h2>Center Management</h2>
+                <div class="form-group">
+                    <label for="tName">Center Name:</label>
+                    <input type="text" id="tName" name="tName" 
+                           value="{{ data.managed_center[0] }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="address">Address:</label>
+                    <input type="text" id="address" name="address" 
+                           value="{{ data.managed_center[1] }}" required>
+                </div>
+                <hr>
+            {% endif %}
+
+            <div class="button-group">
+                <button type="submit" class="save-btn">Save Changes</button>
+                <a href="{{ url_for('instructor_dashboard') }}" class="cancel-btn">Cancel</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
