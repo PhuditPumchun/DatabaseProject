@@ -1,4 +1,3 @@
-# LoginServices.py (อัปเดต)
 
 import os
 from dotenv import load_dotenv
@@ -55,16 +54,12 @@ class LoginServices:
             if conn:
                 conn.close()
 
-    # [ADDED] ฟังก์ชันใหม่สำหรับ student
+    # [MODIFIED] ฟังก์ชันสำหรับ student: ใช้ sUsername และ sPassword
     @staticmethod
-    def _verify_student_and_get_id(username):
+    def _verify_student_and_get_id(username, password):
         """
-        ตรวจสอบ Student ด้วย sID (prototype)
-        NOTE:
-        - ตาราง Student ในโปรเจกต์นี้ (จากไฟล์ InsertStudent.sql) มี sID, sName
-          ยังไม่มี username / password แยก
-        - เพื่อให้ demo ใช้งานได้: เราจะถือว่า 'username' = รหัสนักเรียน sID
-          ส่วน password เราไม่เช็คจริงจัง (แต่ฟอร์มยังต้องกรอกอยู่)
+        ตรวจสอบ Student โดยใช้ sUsername และ sPassword (เหมือน Instructor)
+        คืนค่า (sID, sName)
         """
         conn = LoginServices._get_db_connection()
         if not conn:
@@ -75,9 +70,9 @@ class LoginServices:
             sql_query = """
                 SELECT sID, sName
                 FROM Student
-                WHERE sID = %s;
+                WHERE sUsername = %s AND sPassword = %s;
             """
-            cursor.execute(sql_query, (username,))
+            cursor.execute(sql_query, (username, password))
             result = cursor.fetchone()
             cursor.close()
             return result
@@ -90,7 +85,7 @@ class LoginServices:
             if conn:
                 conn.close()
 
-    # [MODIFIED] authenticate ตอนนี้รองรับ student ด้วย
+    # [MODIFIED] authenticate ตอนนี้รองรับ student ด้วย Logic ที่แก้ไข
     @staticmethod
     def authenticate(username, password, role):
         """
@@ -101,14 +96,16 @@ class LoginServices:
             return {"success": False, "message": "Required fields missing."}, 400
 
         if role == 'student':
-            student_info = LoginServices._verify_student_and_get_id(username)
+            student_info = LoginServices._verify_student_and_get_id(username, password)
             if student_info:
                 sID, sName = student_info
+                # NOTE: ใน app.py เก่า Redirect Student ไป YouTube 
+                # ถ้าต้องการ Dashboard Student ต้องเพิ่ม Route ใน app.py ด้วย
                 return {
                     "success": True,
                     "sID": sID,
                     "sName": sName,
-                    "redirect_url": "/student/dashboard"  # เผื่อโค้ดเก่าเรียกใช้
+                    "redirect_url": "https://www.youtube.com/watch?v=u_c1tRmj7E4"
                 }, 200
             else:
                 return {"success": False, "message": "Invalid Student credentials."}, 401
@@ -117,7 +114,6 @@ class LoginServices:
             user_info = LoginServices._verify_user_and_get_id(username, password)
             if user_info:
                 iID, iName = user_info
-                # คืนค่า success=True และข้อมูล instructor ให้ app.py เก็บใน session
                 return {"success": True, "iID": iID, "iName": iName}, 200 
             else:
                 return {"success": False, "message": "Invalid Instructor credentials."}, 401

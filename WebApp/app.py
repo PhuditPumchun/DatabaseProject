@@ -1,39 +1,19 @@
 # app.py (อัปเดต)
-
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session  # เดิม
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, Flask
 from LoginServices import LoginServices
 from InstructorDashboardServices import InstructorDashboardServices
 from StudentDashboardServices import StudentDashboardServices  # [ADDED]
-
-app = Flask(__name__)
-# ตั้งค่า SECRET_KEY สำหรับการใช้งาน Session (จำเป็น)
-app.config['SECRET_KEY'] = 'your_super_secret_key_here' 
-
-# ----------------------------------------------------
-# หน้า Login (GET) เหมือนเดิม
-# app.py
-
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash
-from LoginServices import LoginServices
-from InstructorDashboardServices import InstructorDashboardServices
-# แก้ไข: เปลี่ยนชื่อคลาสที่ Import ให้เป็น InstructorEditDashboardServices
 from InstructorEditDashboardServices import InstructorEditDashboardServices
 
 app = Flask(__name__)
 # ต้องมี SECRET_KEY สำหรับใช้ session
 app.config['SECRET_KEY'] = 'your_super_secret_key_here' 
 
-# ----------------------------------------------------
-# A. Login & API Routes
-# ----------------------------------------------------
 @app.route('/', methods=['GET'])
 @app.route('/login', methods=['GET'])
 def login_page():
     return render_template('login.html')
 
-# ----------------------------------------------------
-# API Login (AJAX/JS) ยังใช้เหมือนเดิม
-# ----------------------------------------------------
 @app.route('/api/login', methods=['POST'])
 def api_login():
     data = request.get_json() if request.get_json() else request.form
@@ -101,6 +81,52 @@ def instructor_dashboard():
         )
     else:
         return "Error loading dashboard data.", 500
+    
+@app.route('/instructor/edit', methods=['GET'])
+def instructor_edit_dashboard():
+    iID = session.get('iID')
+    iName = session.get('iName', 'Instructor')
+
+    if not iID:
+        return redirect(url_for('login_page'))
+
+    current_data = InstructorDashboardServices.get_dashboard_data(iID)
+
+    if current_data:
+        return render_template('instructorEditDashboard.html', 
+                                instructor_name=iName,
+                                data=current_data)
+    else:
+        return "Error loading data for editing.", 500
+
+@app.route('/instructor/update', methods=['POST'])
+def update_instructor():
+    iID = session.get('iID')
+    
+    if not iID:
+        return redirect(url_for('login_page'))
+
+    # รับค่าจากฟอร์ม
+    tID = request.form.get('tID', type=int)
+    iName = request.form.get('iName')
+    tName = request.form.get('tName')
+    address = request.form.get('address')
+    
+    # เรียกใช้ Service ที่ถูกต้อง
+    success = InstructorEditDashboardServices.update_data(
+        iID=iID,
+        tID=tID,
+        iName=iName,
+        tName=tName,
+        address=address
+    )
+    
+    if success:
+        session['iName'] = iName # อัปเดตชื่อใน Session
+    # else:
+        # flash('Update failed!', 'danger')
+
+    return redirect(url_for('instructor_dashboard'))
 
 # ----------------------------------------------------
 # [ADDED] Student Dashboard ใหม่
