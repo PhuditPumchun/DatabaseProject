@@ -1,3 +1,4 @@
+<!-- templates/instructor_dashboard.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,6 +18,22 @@
         .header-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .header-section h1 { margin: 0; }
 
+        /* จัดกลุ่มปุ่มด้านขวา */
+        .header-buttons { display: flex; gap: 10px; }
+        
+        /* สไตล์ปุ่ม Edit/Update */
+        .update-btn {
+            padding: 8px 15px;
+            background-color: #28a745; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            text-decoration: none; 
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+        .update-btn:hover { background-color: #1e7e34; }
+
         .logout-btn { 
             padding: 8px 15px; 
             background-color: #dc3545; 
@@ -28,20 +45,11 @@
         }
         .logout-btn:hover { background-color: #c82333; }
 
+        /* การจัดเรียงหลัก: ใช้ Flexbox และ align-items: center */
         .profile-section { 
             display: flex; 
-<<<<<<< Updated upstream
             align-items: flex-start; /* เพื่อให้เนื้อหาอยู่ด้านบนสุด */
             gap: 30px; /* ระยะห่างระหว่าง Profile Info กับ รูป */
-=======
-<<<<<<< HEAD
-            align-items: flex-start;
-            gap: 30px;
-=======
-            align-items: flex-start; /* เพื่อให้เนื้อหาอยู่ด้านบนสุด */
-            gap: 30px; /* ระยะห่างระหว่าง Profile Info กับ รูป */
->>>>>>> 34e898d10307056733086ea1034f241c760a5791
->>>>>>> Stashed changes
             margin-top: 20px; 
             padding: 15px; 
             border: 1px solid #dee2e6; 
@@ -50,94 +58,24 @@
         }
         .profile-info { flex-grow: 1; }
         .profile-info p { margin: 5px 0; }
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
-        
-        /* สไตล์สำหรับเส้นแบ่ง */
-        .separator {
-            border-bottom: 1px solid #eee; /* เส้นบางๆ */
-            margin: 20px 0; /* ระยะห่างบนล่าง */
-        }
-
-        .reward-section {
-            margin-top: 20px; /* ระยะห่างจากเส้นแบ่ง */
-            /* border-top: 1px dashed #ccc; */ /* ลบออกไป */
-            /* padding-top: 15px; */ /* ลบออกไป */
-        }
-        .reward-section h4 { margin-top: 0; margin-bottom: 15px; color: #007bff;} 
-        .reward-image-container { 
-            max-width: 300px; 
-            height: auto;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-top: 10px;
-        }
-        .reward-image-container img {
-            max-width: 100%;
-            height: auto;
-            display: block;
-        }
-        .reward-image-container .placeholder {
-            padding: 10px;
-            text-align: center;
-            color: #888;
-            font-size: 0.9em;
-            display: block;
-        }
-
-
         .profile-image-container { 
-            width: 150px;
-            height: 150px;
-            border-radius: 50%; 
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #f0f0f0;
-            border: 3px solid #007bff;
-            flex-shrink: 0; /* ป้องกันรูปไม่ให้หดตัว */
-        }
-        .profile-image-container img { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-=======
->>>>>>> Stashed changes
-        .profile-image-container { 
-            width: 150px; /* ขนาดของกรอบรูป */
-            height: 150px;
-            border: 1px solid #ccc; 
-            border-radius: 4px; 
-            overflow: hidden; /* ซ่อนส่วนเกินของรูป */
-            display: flex; /* จัดให้รูปอยู่ตรงกลางถ้าขนาดเล็กกว่ากรอบ */
-            justify-content: center;
-            align-items: center;
-            background-color: #f0f0f0; /* พื้นหลังถ้าไม่มีรูป */
+            width: 150px; height: 150px; border-radius: 50%; 
+            overflow: hidden; display: flex; justify-content: center;
+            align-items: center; background-color: #f0f0f0;
+            border: 3px solid #007bff; flex-shrink: 0;
         }
         .profile-image-container img { 
             max-width: 100%; 
             max-height: 100%; 
             object-fit: contain; /* ปรับขนาดรูปให้พอดีกรอบโดยไม่ตัด */
-<<<<<<< Updated upstream
-=======
->>>>>>> 34e898d10307056733086ea1034f241c760a5791
->>>>>>> Stashed changes
         }
         .profile-image-container .placeholder {
-            color: #888;
-            font-size: 0.9em;
-            text-align: center;
+            color: #888; font-size: 0.9em; text-align: center;
         }
 
         .center-management, .class-section { 
-            margin-top: 30px; 
-            padding: 15px; 
-            border: 1px solid #dee2e6; 
-            border-radius: 6px; 
-            background-color: #ffffff;
+            margin-top: 30px; padding: 15px; border: 1px solid #dee2e6; 
+            border-radius: 6px; background-color: #ffffff;
         }
         .center-management p { margin: 5px 0; }
 
@@ -150,56 +88,48 @@
     <div class="container">
         <div class="header-section">
             <h1>Welcome, {{ instructor_name }}!</h1>
-<<<<<<< Updated upstream
             <a href="/login" class="logout-btn">Logout</a>
-=======
-<<<<<<< HEAD
-            <a href="/logout" class="logout-btn">Logout</a>
-=======
-            <a href="/login" class="logout-btn">Logout</a>
->>>>>>> 34e898d10307056733086ea1034f241c760a5791
->>>>>>> Stashed changes
         </div>
         
         <h2>Profile Overview</h2>
         <div class="profile-section">
             <div class="profile-info">
                 {% if data.profile %}
+                    <p><strong>Name:</strong> {{ instructor_name }}</p>
                     <p><strong>Subject:</strong> {{ data.profile[1] if data.profile[1] else 'N/A' }}</p>
                     <p><strong>Years of Experience:</strong> {{ data.profile[2] }}</p>
-<<<<<<< Updated upstream
                     <p><strong>Reward/Cert URL:</strong> <a href="{{ data.profile[4] }}" target="_blank">View Reward</a></p>
-=======
-<<<<<<< HEAD
-=======
-                    <p><strong>Reward/Cert URL:</strong> <a href="{{ data.profile[4] }}" target="_blank">View Reward</a></p>
->>>>>>> 34e898d10307056733086ea1034f241c760a5791
->>>>>>> Stashed changes
                 {% else %}
                     <p>Profile information not available.</p>
                 {% endif %}
             </div>
-<<<<<<< Updated upstream
             <div class="profile-image-container">
                 {% if data.profile and data.profile[3] %}
                     <img src="{{ data.profile[3] }}" alt="Profile Image">
-=======
-<<<<<<< HEAD
-            
-            <div class="profile-image-container">
-                {% if data.profile and data.profile[3] %}
-                    <img src="{{ data.profile[3] }}" alt="Profile Image of {{ instructor_name }}">
-=======
-            <div class="profile-image-container">
-                {% if data.profile and data.profile[3] %}
-                    <img src="{{ data.profile[3] }}" alt="Profile Image">
->>>>>>> 34e898d10307056733086ea1034f241c760a5791
->>>>>>> Stashed changes
                 {% else %}
                     <span class="placeholder">No Profile Image</span>
                 {% endif %}
             </div>
         </div>
+
+        
+        <div class="separator"></div>
+
+        
+        {% if data.profile %}
+            <div class="reward-section">
+                <h4>Reward and Certificate</h4>
+                <div class="reward-image-container">
+                    {% if data.profile[4] %}
+                        <img src="{{ data.profile[4] }}" alt="Reward or Certificate Image">
+                        <a href="{{ data.profile[4] }}" target="_blank" style="display: block; text-align: center; font-size: 0.8em; padding: 5px 0; text-decoration: none; color: #007bff;">[Open Full Image]</a>
+                    {% else %}
+                        <span class="placeholder">No reward or certificate image available.</span>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+
 
 <<<<<<< Updated upstream
 =======

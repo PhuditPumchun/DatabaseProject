@@ -4,14 +4,10 @@ import os
 import psycopg2
 from dotenv import load_dotenv
 
-# โหลดตัวแปรสภาพแวดล้อมจากไฟล์ .env (ต้องทำในทุกโมดูลที่ใช้ os.getenv)
 load_dotenv()
 
 class InstructorDashboardServices:
-
-    # ----------------------------------------------------
-    # เมธอดสำหรับสร้างการเชื่อมต่อฐานข้อมูล (นำมาจาก LoginServices)
-    # ----------------------------------------------------
+    
     @staticmethod
     def _get_db_connection():
         """สร้างและคืนค่า Connection Object ไปยังฐานข้อมูล PostgreSQL"""
@@ -28,9 +24,6 @@ class InstructorDashboardServices:
             print(f"Database connection error in Dashboard Service: {e}")
             return None
 
-    # ----------------------------------------------------
-    # เมธอดหลัก: ดึงข้อมูล Dashboard สำหรับ Instructor
-    # ----------------------------------------------------
     @staticmethod
     def get_dashboard_data(iID):
         """ดึงข้อมูลที่เกี่ยวข้องทั้งหมดสำหรับ Instructor ID ที่กำหนด"""
@@ -51,19 +44,19 @@ class InstructorDashboardServices:
                 LEFT JOIN InstructorMedia im ON i.iID = im.iID
                 WHERE i.iID = %s;
             """, (iID,))
-            data['profile'] = cursor.fetchone()
+            # NOTE: iName ถูกส่งมาใน session ด้วย แต่ถูกดึงมาซ้ำที่นี่เพื่อความสมบูรณ์
+            data['profile'] = cursor.fetchone() 
             
-            # 2. ข้อมูลศูนย์ที่ดูแล (ถ้าเป็น CenterManager)
+            # 2. ข้อมูลศูนย์ที่ดูแล (เพิ่ม t.tID สำหรับหน้า Edit)
             cursor.execute("""
-                SELECT t.tName, t.address
+                SELECT t.tName, t.address, t.tID
                 FROM TutoringCenter t
                 JOIN CenterManager cm ON t.tID = cm.tID
                 WHERE cm.iID = %s;
             """, (iID,))
-            data['managed_center'] = cursor.fetchone()
+            data['managed_center'] = cursor.fetchone() 
 
             # 3. ข้อมูล Class Slot ที่มี
-            # ดึง Class Slot ทั้งหมดใน Center ที่เขาดูแล
             cursor.execute("""
                 SELECT 
                     cDay, cTime, studentNow, studentMax, t.tName 

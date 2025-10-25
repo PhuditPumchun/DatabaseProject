@@ -1,15 +1,18 @@
 # app.py
 
-# ... (import ต่างๆ เหมือนเดิม) ...
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session # เพิ่ม session
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash
 from LoginServices import LoginServices
 from InstructorDashboardServices import InstructorDashboardServices
+# แก้ไข: เปลี่ยนชื่อคลาสที่ Import ให้เป็น InstructorEditDashboardServices
+from InstructorEditDashboardServices import InstructorEditDashboardServices
 
 app = Flask(__name__)
-# ตั้งค่า SECRET_KEY สำหรับการใช้งาน Session (จำเป็นมากในการทำงานจริง)
+# ต้องมี SECRET_KEY สำหรับใช้ session
 app.config['SECRET_KEY'] = 'your_super_secret_key_here' 
 
-# ... (Route สำหรับ login_page และ api_login เหมือนเดิม) ...
+# ----------------------------------------------------
+# A. Login & API Routes
+# ----------------------------------------------------
 @app.route('/', methods=['GET'])
 @app.route('/login', methods=['GET'])
 def login_page():
@@ -25,9 +28,6 @@ def api_login():
     response, status_code = LoginServices.authenticate(username, password, role)
     return jsonify(response), status_code
 
-# ----------------------------------------------------
-# 3. Form Handler Route (POST) - สำหรับหน้าเว็บ HTML
-# ----------------------------------------------------
 @app.route('/login', methods=['POST'])
 def handle_login_form():
     username = request.form.get('username')
@@ -36,26 +36,26 @@ def handle_login_form():
 
     response, status_code = LoginServices.authenticate(username, password, role)
 
-    if response.get('success'):
-        if role == 'instructor':
-            # เก็บ iID ไว้ใน Session เพื่อใช้ดึงข้อมูลใน Dashboard
-            session['iID'] = response.get('iID')
-            session['iName'] = response.get('iName')
-            
-            # Redirect ไปยัง Dashboard
-            return redirect(url_for('instructor_dashboard'))
-        else:
-            # สำหรับ Student (ถ้า implement แล้ว)
-            redirect_url = response.get('redirect_url')
-            return redirect(redirect_url)
+    if response.get('success') and role == 'instructor':
+        session['iID'] = response.get('iID')
+        session['iName'] = response.get('iName')
+        return redirect(url_for('instructor_dashboard'))
+    elif response.get('success') and role == 'student':
+        # สำหรับ Student (ถ้า implement)
+        return redirect("https://www.youtube.com/watch?v=u_c1tRmj7E4")
     else:
-        # ล็อกอินล้มเหลว: redirect กลับไปหน้า login
-        # ในโลกจริง ควรใช้ flash() เพื่อแสดงข้อผิดพลาด
+        # ล็อกอินล้มเหลว
         return redirect(url_for('login_page'))
+
+@app.route('/logout')
+def logout():
+    session.pop('iID', None) 
+    session.pop('iName', None) 
+    return redirect(url_for('login_page'))
 
 
 # ----------------------------------------------------
-# 4. Route ใหม่: Instructor Dashboard
+# B. Instructor Dashboard Routes
 # ----------------------------------------------------
 @app.route('/instructor/dashboard', methods=['GET'])
 def instructor_dashboard():
@@ -65,8 +65,7 @@ def instructor_dashboard():
     if not iID:
         return redirect(url_for('login_page'))
 
-    # ดึงข้อมูลทั้งหมดจาก Service ใหม่
-    dashboard_data = InstructorDashboardServices.get_dashboard_data(iID) # <--- CALL SERVICE ใหม่
+    dashboard_data = InstructorDashboardServices.get_dashboard_data(iID)
 
     if dashboard_data:
         return render_template('instructor_dashboard.html', 
@@ -74,17 +73,52 @@ def instructor_dashboard():
                                 data=dashboard_data)
     else:
         return "Error loading dashboard data.", 500
+
+@app.route('/instructor/edit', methods=['GET'])
+def instructor_edit_dashboard():
+    iID = session.get('iID')
+    iName = session.get('iName', 'Instructor')
+
+    if not iID:
+        return redirect(url_for('login_page'))
+
+    current_data = InstructorDashboardServices.get_dashboard_data(iID)
+
+    if current_data:
+        return render_template('instructorEditDashboard.html', 
+                                instructor_name=iName,
+                                data=current_data)
+    else:
+        return "Error loading data for editing.", 500
+
+@app.route('/instructor/update', methods=['POST'])
+def update_instructor():
+    iID = session.get('iID')
     
-@app.route('/logout')
-def logout():
-    """ล้างข้อมูล session และ Redirect ไปยังหน้า Login"""
+    if not iID:
+        return redirect(url_for('login_page'))
+
+    # รับค่าจากฟอร์ม
+    tID = request.form.get('tID', type=int)
+    iName = request.form.get('iName')
+    tName = request.form.get('tName')
+    address = request.form.get('address')
     
-    # ลบตัวแปร iID และ iName ออกจาก session
-    session.pop('iID', None) 
-    session.pop('iName', None) 
+    # เรียกใช้ Service ที่ถูกต้อง
+    success = InstructorEditDashboardServices.update_data(
+        iID=iID,
+        tID=tID,
+        iName=iName,
+        tName=tName,
+        address=address
+    )
     
-    # Redirect ผู้ใช้กลับไปที่หน้า Login
-    return redirect(url_for('login_page'))
+    if success:
+        session['iName'] = iName # อัปเดตชื่อใน Session
+    # else:
+        # flash('Update failed!', 'danger')
+
+    return redirect(url_for('instructor_dashboard'))
 
 if __name__ == '__main__':
     app.run(debug=True)
