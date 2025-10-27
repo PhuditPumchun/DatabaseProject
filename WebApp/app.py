@@ -67,77 +67,108 @@ def handle_login_form():
 # --------------------------
 # Instructor Dashboard (GET)
 # --------------------------
+
 @app.route('/instructor/dashboard', methods=['GET'])
 def instructor_dashboard():
+    # Route นี้ใช้สำหรับแสดงหน้าหลักของ Dashboard
     iID = session.get('iID')
     iName = session.get('iName', 'Instructor')
-
-    if not iID:
-        return redirect(url_for('login_page'))
-
-    dashboard_data = InstructorDashboardServices.get_dashboard_data(iID)
-
-    if dashboard_data:
-        return render_template(
-            'instructor_dashboard.html',
-            instructor_name=iName,
-            data=dashboard_data
-        )
-    else:
-        return "Error loading dashboard data.", 500
+    if not iID: return redirect(url_for('login_page'))
     
+    # NOTE: ต้องมั่นใจว่า get_dashboard_data ดึง sID ของ Instructor มาด้วย
+    dashboard_data = InstructorDashboardServices.get_dashboard_data(iID)
+    
+    if dashboard_data:
+        return render_template('instructor_dashboard.html', instructor_name=iName, data=dashboard_data)
+    return "Error loading instructor dashboard data.", 500
+
 @app.route('/instructor/edit', methods=['GET'])
 def instructor_edit_dashboard():
+    # Route นี้ใช้แสดงหน้าฟอร์มสำหรับแก้ไข
     iID = session.get('iID')
     iName = session.get('iName', 'Instructor')
 
-    if not iID:
-        return redirect(url_for('login_page'))
-
+    if not iID: return redirect(url_for('login_page'))
+    
     current_data = InstructorDashboardServices.get_dashboard_data(iID)
+    
+    # **ดึง Subject List สำหรับ Dropdown**
+    subject_list = InstructorDashboardServices.get_subject_list()
 
     if current_data:
-        return render_template('instructorEditDashboard.html', 
-                                instructor_name=iName,
-                                data=current_data)
-    else:
-        return "Error loading data for editing.", 500
+        return render_template(
+            'InstructorEditDashBoard.html', 
+            instructor_name=iName,
+            data=current_data,
+            subject_list=subject_list
+        )
+    return "Error loading data for editing.", 500
+
 
 @app.route('/instructor/update', methods=['POST'])
 def update_instructor():
+    # Route นี้ใช้รับค่าจากฟอร์ม Update และเรียกใช้ Service
     iID = session.get('iID')
-    if not iID:
-        return redirect(url_for('login_page'))
+    
+    if not iID: return redirect(url_for('login_page'))
 
-    # รับค่าจากฟอร์ม
-    tID        = request.form.get('tID', type=int)
-    iName      = request.form.get('iName')
-    tName      = request.form.get('tName')
-    address    = request.form.get('address')
+    # รับค่าจากฟอร์ม (ใช้ .get() เพื่อป้องกัน KeyError)
+    tID = request.form.get('tID', type=int)
+    mediaID = request.form.get('mediaID', type=int)
+    subjectID = request.form.get('subjectID', type=int) # NEW: Subject ID
+    
+    # ข้อมูล Profile/Center
+    iName = request.form.get('iName')
+    iUsername = request.form.get('iUsername') # NEW: Username
+    iPassword = request.form.get('iPassword') # NEW: Password
+    tName = request.form.get('tName')
+    address = request.form.get('address')
+    
+    # ข้อมูล Media URL
+    profile_url = request.form.get('profile_url')
+    reward_url = request.form.get('reward_url')
+    video_url = request.form.get('video_url')
 
-    # >>> เพิ่มส่วนของสื่อ / URL <<<
-    mediaID     = request.form.get('mediaID', type=int)  # ต้องมี hidden field ในฟอร์ม
-    profile_url = request.form.get('profile_url') or None
-    reward_url  = request.form.get('reward_url')  or None
-    video_url   = request.form.get('video_url')   or None
-
-    # เรียก Service พร้อมส่งพารามิเตอร์ครบ
     success = InstructorEditDashboardServices.update_data(
         iID=iID,
         tID=tID,
+        mediaID=mediaID,
         iName=iName,
+        iUsername=iUsername,
+        iPassword=iPassword, 
         tName=tName,
         address=address,
-        mediaID=mediaID,
         profile_url=profile_url,
         reward_url=reward_url,
         video_url=video_url,
+        subjectID=subjectID # NEW: Subject ID
     )
-
-    if success and iName:
-        session['iName'] = iName
-
+    
+    if success:
+        session['iName'] = iName 
+    
     return redirect(url_for('instructor_dashboard'))
+
+
+@app.route('/instructor/delete', methods=['POST'])
+def delete_instructor_account():
+    # Route นี้ใช้รับคำขอ Delete Account
+    iID = request.form.get('iID', type=int) # รับ iID จาก Hidden Field ใน Modal Form
+    
+    # ตรวจสอบความถูกต้องของ Session
+    if not session.get('iID') or session.get('iID') != iID:
+        # อาจเป็นการโจมตี CSRF หรือ Session หมดอายุ
+        return redirect(url_for('login_page'))
+    
+    success = InstructorEditDashboardServices.delete_account(iID)
+    
+    if success:
+        # ลบบัญชีสำเร็จ: ล้าง Session และ Redirect ไปหน้า Login
+        session.pop('iID', None) 
+        session.pop('iName', None)
+    
+    # ไม่ว่าจะสำเร็จหรือไม่ (ถ้าล้มเหลวให้ถือว่าควรไปหน้า Login เพื่อความปลอดภัย)
+    return redirect(url_for('login_page'))
 
 
 # --------------------------

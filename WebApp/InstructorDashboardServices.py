@@ -35,17 +35,17 @@ class InstructorDashboardServices:
         try:
             cursor = conn.cursor()
             
-            # 1. ข้อมูลพื้นฐานของ Instructor (เพิ่ม i.iUsername)
+            # 1. ข้อมูลพื้นฐานของ Instructor (เพิ่ม i.sID)
             cursor.execute("""
                 SELECT 
                     i.iName, s.sName AS SubjectName, i.expYear, im.imageProfile, im.rewardURL, 
-                    im.mediaID, im.videoURL, i.iUsername 
+                    im.mediaID, im.videoURL, i.iUsername, i.sID 
                 FROM Instructor i
                 LEFT JOIN Subject s ON i.sID = s.sID
                 LEFT JOIN InstructorMedia im ON i.iID = im.iID
                 WHERE i.iID = %s;
             """, (iID,))
-            # data['profile'] จะมี 8 คอลัมน์ (ดัชนี 0-7)
+            # data['profile'] จะมี 9 คอลัมน์ (ดัชนี 0-8). i.sID อยู่ที่ [8]
             data['profile'] = cursor.fetchone() 
             
             # 2. ข้อมูลศูนย์ที่ดูแล
@@ -74,6 +74,25 @@ class InstructorDashboardServices:
             print(f"SQL execution error in dashboard: {e}")
             return None
         
+        finally:
+            if conn:
+                conn.close()
+
+    # --- NEW: ดึงรายการ Subject สำหรับ Dropdown ---
+    @staticmethod
+    def get_subject_list():
+        """ดึงรายการ Subject ทั้งหมด (sID, sName) จากตาราง Subject"""
+        conn = InstructorDashboardServices._get_db_connection()
+        if not conn:
+            return []
+
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT sID, sName FROM Subject ORDER BY sName;")
+                return cursor.fetchall()
+        except psycopg2.Error as e:
+            print(f"SQL error fetching subject list: {e}")
+            return []
         finally:
             if conn:
                 conn.close()

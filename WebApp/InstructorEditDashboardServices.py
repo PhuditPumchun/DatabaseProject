@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-class InstructorEditDashboardServices: # ใช้ชื่อคลาสนี้ตามที่ผู้ใช้ส่งมา
+class InstructorEditDashboardServices:
 
     @staticmethod
     def _get_db_connection():
@@ -38,6 +38,7 @@ class InstructorEditDashboardServices: # ใช้ชื่อคลาสนี
         profile_url=None,
         reward_url=None,
         video_url=None,
+        subjectID=None, # NEW: เพิ่ม subjectID
     ):
         """อัปเดตข้อมูล Instructor / TutoringCenter / InstructorMedia เฉพาะฟิลด์ที่ส่งมา"""
         conn = InstructorEditDashboardServices._get_db_connection()
@@ -47,7 +48,7 @@ class InstructorEditDashboardServices: # ใช้ชื่อคลาสนี
         try:
             cursor = conn.cursor()
 
-            # --- 1) UPDATE Instructor (Name, Username, Password) ---
+            # --- 1) UPDATE Instructor (Name, Username, Password, Subject) ---
             set_cols, params = [], []
             if iName is not None:
                 set_cols.append("iName = %s")
@@ -58,6 +59,10 @@ class InstructorEditDashboardServices: # ใช้ชื่อคลาสนี
             if iPassword and iPassword.strip() != "":
                 set_cols.append("iPassword = %s")
                 params.append(iPassword)
+            if subjectID is not None:
+                 set_cols.append("sID = %s")
+                 params.append(subjectID)
+
 
             if set_cols:
                 sql = "UPDATE Instructor SET " + ", ".join(set_cols) + " WHERE iID = %s;"
@@ -108,43 +113,18 @@ class InstructorEditDashboardServices: # ใช้ชื่อคลาสนี
                 
                 # 3b. ถ้า UPDATE ไม่สำเร็จ (แถวไม่พบ - rowcount == 0) ให้ทำการ INSERT
                 if cursor.rowcount == 0:
-                    # ใช้ COALESCE เพื่อรับรองว่าค่าที่ไม่ถูกส่งมา (เป็น None) จะถูกแทนที่ด้วยค่าว่าง/ค่าเริ่มต้น
-                    # ในตารางคุณฟิลด์เป็น NOT NULL ต้องมั่นใจว่าค่าที่ INSERT ไม่ใช่ NULL
-                    
-                    # รวบรวมฟิลด์ทั้งหมดที่ต้องใส่ใน INSERT (รวม iID)
-                    insert_cols = ['iID'] + media_cols
-                    insert_values = [iID] + media_params
-                    
-                    # NOTE: ต้องมั่นใจว่าคอลัมน์ NOT NULL อื่นๆ ถูกรวมอยู่ใน INSERT
-                    # จาก Schema ที่มี: mediaID (PK), iID, imageProfile (NOT NULL), rewardURL (NOT NULL), videoURL (NOT NULL)
-                    # เนื่องจาก imageProfile, rewardURL, videoURL เป็น NOT NULL, ถ้าฟอร์มส่ง None มาจะเกิด Error
-                    # แต่เราสมมติว่าฟอร์มส่งค่าปัจจุบันมาเสมอ ดังนั้นเราจะ INSERT เฉพาะค่าที่ถูกส่งมา
-
-                    # หากขาดคอลัมน์ NOT NULL เราต้องรวมมันใน INSERT
-                    # แต่เนื่องจากเราไม่ทราบค่า mediaID ที่ถูกต้องสำหรับการ INSERT, เราจะสมมติว่า 
-                    # imageProfile, rewardURL, videoURL ถูกเติมเต็มด้วยค่าว่าง (ถ้าไม่ได้ถูกส่งมา)
-                    
-                    # เนื่องจากหน้า UI ส่งค่าปัจจุบันมาเสมอ เราจะใช้ค่าที่ส่งมา
-                    # (ถ้าไม่ได้ถูกส่งมาจริงๆ โค้ดจะใช้ None ซึ่งอาจทำให้เกิด Error NOT NULL)
-                    
-                    # เราต้องหาค่า mediaID ใหม่ (ถ้า mediaID เป็น PK)
-                    # แต่เพื่อความง่าย เราจะสมมติว่าโค้ดที่รันก่อนหน้านี้จัดการ mediaID ไปแล้ว
-                    
                     # SQL สำหรับ INSERT:
                     sql_insert = """
                         INSERT INTO InstructorMedia (iID, imageProfile, rewardURL, videoURL)
                         VALUES (%s, %s, %s, %s);
                     """
-                    
-                    # ใช้ค่าที่ส่งมา (อาจต้องตรวจสอบว่าไม่ใช่ None สำหรับคอลัมน์ NOT NULL)
+                    # ใช้ค่าที่ส่งมา (ใช้ '' แทน None เพื่อป้องกัน NOT NULL error)
                     insert_values_final = [
                         iID,
-                        profile_url or '', # ป้องกัน NOT NULL error (ควรปรับใน UI)
-                        reward_url or '',  # ป้องกัน NOT NULL error (ควรปรับใน UI)
-                        video_url or ''    # ป้องกัน NOT NULL error (ควรปรับใน UI)
+                        profile_url or '', 
+                        reward_url or '',
+                        video_url or ''
                     ]
-                    
-                    # NOTE: การใช้ 'profile_url or ''' เป็นการแก้ไขชั่วคราว ถ้าฟิลด์อนุญาตให้เป็น string ว่าง
                     
                     cursor.execute(sql_insert, tuple(insert_values_final))
 
@@ -157,6 +137,60 @@ class InstructorEditDashboardServices: # ใช้ชื่อคลาสนี
             if conn:
                 conn.rollback()
             print(f"SQL execution error during update: {e}")
+            return False
+        finally:
+            if conn:
+                conn.close()
+    
+    # --- EDITED: เมธอดสำหรับลบบัญชี (รวมการลบ Center, ClassSlot, Enrollment) ---
+    @staticmethod
+    def delete_account(iID):
+        """
+        ลบ Instructor และข้อมูลที่เกี่ยวข้องทั้งหมด:
+        1. ลบ ClassSlot ในศูนย์ที่ Instructor บริหาร (Enrollment ถูกลบโดย CASCADE)
+        2. ลบ TutoringCenter ที่ Instructor บริหาร
+        3. ลบ Instructor (ลบ CenterManager, InstructorMedia โดย CASCADE)
+        """
+        conn = InstructorEditDashboardServices._get_db_connection()
+        if not conn:
+            return False
+
+        try:
+            with conn.cursor() as cursor:
+                
+                # 1. ค้นหา tID ของศูนย์ที่ Instructor คนนี้บริหารอยู่
+                cursor.execute(
+                    "SELECT tID FROM CenterManager WHERE iID = %s;", 
+                    (iID,)
+                )
+                center_manager_tID = cursor.fetchone()
+                
+                if center_manager_tID:
+                    tID = center_manager_tID[0]
+                    
+                    # 2. ลบ ClassSlot ทั้งหมดใน Center นั้น
+                    #    (หาก Enrollment มี CASCADE จาก ClassSlot, ข้อมูล Enroll จะถูกลบ)
+                    cursor.execute(
+                        "DELETE FROM ClassSlot WHERE tID = %s;",
+                        (tID,)
+                    )
+                    
+                    # 3. ลบ TutoringCenter ที่ Instructor บริหาร
+                    cursor.execute(
+                        "DELETE FROM TutoringCenter WHERE tID = %s;",
+                        (tID,)
+                    )
+                
+                # 4. ลบ Instructor
+                #    (InstructorMedia และ CenterManager จะถูกลบโดย Foreign Key CASCADE)
+                cursor.execute("DELETE FROM Instructor WHERE iID = %s;", (iID,))
+            
+            conn.commit()
+            return True
+        except psycopg2.Error as e:
+            print(f"SQL execution error during delete account: {e}")
+            if conn:
+                conn.rollback()
             return False
         finally:
             if conn:
