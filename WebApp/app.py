@@ -102,31 +102,39 @@ def instructor_edit_dashboard():
         return "Error loading data for editing.", 500
 
 @app.route('/instructor/update', methods=['POST'])
+@app.route('/instructor/update', methods=['POST'])
 def update_instructor():
     iID = session.get('iID')
-    
     if not iID:
         return redirect(url_for('login_page'))
 
     # รับค่าจากฟอร์ม
-    tID = request.form.get('tID', type=int)
-    iName = request.form.get('iName')
-    tName = request.form.get('tName')
-    address = request.form.get('address')
-    
-    # เรียกใช้ Service ที่ถูกต้อง
+    tID        = request.form.get('tID', type=int)
+    iName      = request.form.get('iName')
+    tName      = request.form.get('tName')
+    address    = request.form.get('address')
+
+    # >>> เพิ่มส่วนของสื่อ / URL <<<
+    mediaID     = request.form.get('mediaID', type=int)  # ต้องมี hidden field ในฟอร์ม
+    profile_url = request.form.get('profile_url') or None
+    reward_url  = request.form.get('reward_url')  or None
+    video_url   = request.form.get('video_url')   or None
+
+    # เรียก Service พร้อมส่งพารามิเตอร์ครบ
     success = InstructorEditDashboardServices.update_data(
         iID=iID,
         tID=tID,
         iName=iName,
         tName=tName,
-        address=address
+        address=address,
+        mediaID=mediaID,
+        profile_url=profile_url,
+        reward_url=reward_url,
+        video_url=video_url,
     )
-    
-    if success:
-        session['iName'] = iName # อัปเดตชื่อใน Session
-    # else:
-        # flash('Update failed!', 'danger')
+
+    if success and iName:
+        session['iName'] = iName
 
     return redirect(url_for('instructor_dashboard'))
 
