@@ -1,13 +1,13 @@
 # InstructorEditDashboardServices.py
-
 import os
 import psycopg2
 from dotenv import load_dotenv
 
 load_dotenv()
 
+
 class InstructorEditDashboardServices:
-    
+
     @staticmethod
     def _get_db_connection():
         """สร้างและคืนค่า Connection Object ไปยังฐานข้อมูล PostgreSQL"""
@@ -17,7 +17,7 @@ class InstructorEditDashboardServices:
                 user=os.getenv('DB_USER'),
                 password=os.getenv('DB_PASSWORD'),
                 host=os.getenv('DB_HOST'),
-                port=os.getenv('DB_PORT')
+                port=os.getenv('DB_PORT'),
             )
             return conn
         except psycopg2.Error as e:
@@ -25,58 +25,93 @@ class InstructorEditDashboardServices:
             return None
 
     @staticmethod
-    def update_data(iID, tID, mediaID, iName, iUsername, iPassword, tName, address, profile_url, reward_url, video_url):
-        """อัปเดตข้อมูล Instructor, Center Manager, URL สื่อ, และ Security"""
+    def update_data(
+        iID,
+        tID=None,
+        iName=None,
+        tName=None,
+        address=None,
+        mediaID=None,
+        iUsername=None,
+        iPassword=None,
+        profile_url=None,
+        reward_url=None,
+        video_url=None,
+    ):
+        """อัปเดตข้อมูล Instructor / TutoringCenter / InstructorMedia เฉพาะฟิลด์ที่ส่งมา"""
         conn = InstructorEditDashboardServices._get_db_connection()
         if not conn:
             return False
 
         try:
             cursor = conn.cursor()
-            
-            # 1. UPDATE ชื่อและ Username ของ Instructor
-            update_instructor_sql = """
-                UPDATE Instructor 
-                SET iName = %s, iUsername = %s 
-                WHERE iID = %s;
-            """
-            params = [iName, iUsername, iID]
 
-            # 1.1. หากมีการกรอก New Password, ให้ทำการ Update iPassword ด้วย
-            if iPassword:
-                # WARNING: ในโปรเจกต์จริง ต้องใช้ Password Hashing เช่น bcrypt ก่อนบันทึก
-                update_instructor_sql = update_instructor_sql.replace(
-                    "WHERE iID = %s", ", iPassword = %s WHERE iID = %s"
+            # --- 1) UPDATE Instructor (เฉพาะคอลัมน์ที่ส่งมา) ---
+            set_cols, params = [], []
+            if iName is not None:
+                set_cols.append("iName = %s")
+                params.append(iName)
+            if iUsername is not None:
+                set_cols.append("iUsername = %s")
+                params.append(iUsername)
+            if iPassword:  # ถ้าส่งพาสเวิร์ดมา (ไม่ None/ไม่ว่าง) ให้อัปเดตด้วย
+                set_cols.append("iPassword = %s")
+                params.append(iPassword)
+
+            if set_cols:
+                sql = "UPDATE Instructor SET " + ", ".join(set_cols) + " WHERE iID = %s;"
+                params.append(iID)
+                cursor.execute(sql, tuple(params))
+
+            # --- 2) UPDATE TutoringCenter (ต้องทราบ tID และมีอย่างน้อยหนึ่งคอลัมน์) ---
+            tc_cols, tc_params = [], []
+            if tName is not None:
+                tc_cols.append("tName = %s")
+                tc_params.append(tName)
+            if address is not None:
+                tc_cols.append("address = %s")
+                tc_params.append(address)
+
+            if tID is not None and tc_cols:
+                sql = (
+                    "UPDATE TutoringCenter t SET "
+                    + ", ".join(tc_cols)
+                    + " WHERE tID = %s "
+                    + "AND EXISTS (SELECT 1 FROM CenterManager WHERE tID = t.tID AND iID = %s);"
                 )
-                params.insert(2, iPassword)
-            
-            cursor.execute(update_instructor_sql, tuple(params))
+                tc_params.extend([tID, iID])
+                cursor.execute(sql, tuple(tc_params))
 
-            # 2. UPDATE ชื่อ Tutoring Center และ Address
-            cursor.execute("""
-                UPDATE TutoringCenter t 
-                SET tName = %s, address = %s 
-                WHERE tID = %s 
-                AND EXISTS (SELECT 1 FROM CenterManager WHERE tID = t.tID AND iID = %s);
-            """, (tName, address, tID, iID))
-            
-            # 3. UPDATE InstructorMedia URL 
-            if mediaID is not None:
-                 cursor.execute("""
-                    UPDATE InstructorMedia 
-                    SET imageProfile = %s, rewardURL = %s, videoURL = %s
-                    WHERE mediaID = %s AND iID = %s;
-                 """, (profile_url, reward_url, video_url, mediaID, iID))
-            
+            # --- 3) UPDATE InstructorMedia (ต้องทราบ mediaID และมีอย่างน้อยหนึ่งคอลัมน์) ---
+            media_cols, media_params = [], []
+            if profile_url is not None:
+                media_cols.append("imageProfile = %s")
+                media_params.append(profile_url)
+            if reward_url is not None:
+                media_cols.append("rewardURL = %s")
+                media_params.append(reward_url)
+            if video_url is not None:
+                media_cols.append("videoURL = %s")
+                media_params.append(video_url)
+
+            if mediaID is not None and media_cols:
+                sql = (
+                    "UPDATE InstructorMedia SET "
+                    + ", ".join(media_cols)
+                    + " WHERE mediaID = %s AND iID = %s;"
+                )
+                media_params.extend([mediaID, iID])
+                cursor.execute(sql, tuple(media_params))
+
             conn.commit()
             cursor.close()
             return True
-            
+
         except psycopg2.Error as e:
-            conn.rollback()
+            if conn:
+                conn.rollback()
             print(f"SQL execution error during update: {e}")
             return False
-        
         finally:
             if conn:
                 conn.close()
