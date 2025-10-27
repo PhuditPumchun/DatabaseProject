@@ -1,40 +1,226 @@
+<!-- templates/register_instructor.html -->
+<!-- [MODIFIED] extended form: instructor + center + first class slot -->
+
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>Register Instructor</title>
-    <style>
-        body { font-family: Arial, sans-serif; background:#f5f5f5; padding:40px; }
-        .box {
-            max-width:400px;
-            margin:auto;
-            background:#fff;
-            border-radius:8px;
-            box-shadow:0 4px 16px rgba(0,0,0,0.1);
-            padding:24px;
-            text-align:center;
-        }
-        h2 { margin-top:0; color:#333; font-size:1.2rem; }
-        .back {
-            margin-top:20px;
-            font-size:0.8rem;
-        }
-        .back a {
-            color:#007bff;
-            text-decoration:none;
-        }
-        .back a:hover { text-decoration:underline; }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Register (Instructor)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background:#f5f5f5;
+      padding:40px;
+    }
+    .box {
+      max-width:500px;
+      margin:auto;
+      background:#fff;
+      border-radius:8px;
+      box-shadow:0 4px 16px rgba(0,0,0,.1);
+      padding:24px;
+    }
+    h2 {
+      margin:0 0 16px;
+      text-align:center;
+      font-size:1.2rem;
+      color:#333;
+    }
+    h3 {
+      margin:24px 0 8px;
+      font-size:1rem;
+      color:#222;
+      font-weight:600;
+      border-bottom:1px solid #e0e0e0;
+      padding-bottom:4px;
+    }
+    .error {
+      background:#f8d7da;
+      color:#721c24;
+      border:1px solid #f5c6cb;
+      border-radius:4px;
+      padding:8px;
+      font-size:.85rem;
+      margin-bottom:12px;
+    }
+    .row {
+      margin-bottom:12px;
+    }
+    label {
+      display:block;
+      margin-bottom:4px;
+      color:#444;
+      font-size:.9rem;
+      font-weight:500;
+    }
+    input, select, textarea {
+      width:100%;
+      padding:8px;
+      border:1px solid #ccc;
+      border-radius:4px;
+      font-size:.95rem;
+    }
+    textarea {
+      min-height:60px;
+      resize:vertical;
+    }
+    .hint {
+      font-size:.75rem;
+      color:#777;
+      line-height:1.2;
+      margin-top:2px;
+    }
+    button {
+      width:100%;
+      padding:10px;
+      background:#007bff;
+      color:#fff;
+      border:none;
+      border-radius:4px;
+      cursor:pointer;
+      font-weight:600;
+      font-size:.9rem;
+      margin-top:16px;
+    }
+    button:hover {
+      background:#0069d9;
+    }
+    .back {
+      margin-top:16px;
+      text-align:center;
+      font-size:.85rem;
+    }
+    .back a {
+      color:#007bff;
+      text-decoration:none;
+    }
+    .back a:hover {
+      text-decoration:underline;
+    }
+
+    .two-col {
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .two-col .col {
+      flex:1;
+      min-width:140px;
+    }
+  </style>
 </head>
 <body>
 <div class="box">
-    <h2>สมัคร Instructor</h2>
-    <p>ฟังก์ชันนี้จะพร้อมใช้งานในอนาคต</p>
+  <h2>Register (Instructor)</h2>
 
-    <div class="back">
-        <a href="{{ url_for('register_select_role') }}">ย้อนกลับ</a> |
-        <a href="{{ url_for('login_page') }}">ไปหน้า Login</a>
+  {% if error_msg %}
+    <div class="error">{{ error_msg }}</div>
+  {% endif %}
+
+  <form method="POST" action="{{ url_for('register_instructor') }}">
+
+    <!-- =========== SECTION 1: Instructor basic info =========== -->
+    <h3>Instructor Information</h3>
+
+    <div class="row">
+      <label for="name">Full name</label>
+      <input id="name" name="name" required />
+      <div class="hint">Saved to Instructor.iName</div>
     </div>
+
+    <div class="row">
+      <label for="subject_id">Subject</label>
+      <select id="subject_id" name="subject_id" required>
+        <option value="">-- Select subject --</option>
+        {% for subj in subjects %}
+          <!-- subj[0] = sID, subj[1] = sName -->
+          <option value="{{ subj[0] }}">{{ subj[1] }}</option>
+        {% endfor %}
+      </select>
+      <div class="hint">Saved to Instructor.sID</div>
+    </div>
+
+    <div class="row">
+      <label for="exp_year">Years of experience</label>
+      <input id="exp_year" type="number" min="0" name="exp_year" required />
+      <div class="hint">Saved to Instructor.expYear</div>
+    </div>
+
+    <div class="row two-col">
+      <div class="col">
+        <label for="username">Username</label>
+        <input id="username" name="username" required />
+        <div class="hint">Saved to Instructor.iUsername (must be unique)</div>
+      </div>
+      <div class="col">
+        <label for="password">Password</label>
+        <input id="password" type="password" name="password" required />
+        <div class="hint">Saved to Instructor.iPassword</div>
+      </div>
+    </div>
+
+    <!-- =========== SECTION 2: Tutoring Center info =========== -->
+    <h3>Tutoring Center</h3>
+
+    <div class="row">
+      <label for="center_name">Center name</label>
+      <input id="center_name" name="center_name" required />
+      <div class="hint">Saved to TutoringCenter.tName</div>
+    </div>
+
+    <div class="row">
+      <label for="center_address">Address / Location</label>
+      <textarea id="center_address" name="center_address" required></textarea>
+      <div class="hint">Saved to TutoringCenter.address</div>
+    </div>
+
+    <!-- =========== SECTION 3: First Class Slot =========== -->
+    <h3>Class / Schedule</h3>
+
+    <div class="row two-col">
+      <div class="col">
+        <label for="class_day">Day</label>
+        <select id="class_day" name="class_day" required>
+          <option value="">-- Day --</option>
+          <option>Monday</option>
+          <option>Tuesday</option>
+          <option>Wednesday</option>
+          <option>Thursday</option>
+          <option>Friday</option>
+          <option>Saturday</option>
+          <option>Sunday</option>
+        </select>
+        <div class="hint">Saved to ClassSlot.cDay</div>
+      </div>
+
+      <div class="col">
+        <label for="class_time">Time range</label>
+        <input id="class_time" name="class_time" placeholder="09:00 - 10:30" required />
+        <div class="hint">Saved to ClassSlot.cTime</div>
+      </div>
+    </div>
+
+    <div class="row two-col">
+      <div class="col">
+        <label for="max_students">Max seats</label>
+        <input id="max_students" type="number" min="1" name="max_students" required />
+        <div class="hint">Saved to ClassSlot.studentMax</div>
+      </div>
+
+      <div class="col">
+        <label for="class_price">Price (THB)</label>
+        <input id="class_price" type="number" min="0" name="class_price" required />
+        <div class="hint">Saved to ClassSlot.price</div>
+      </div>
+    </div>
+
+    <button type="submit">Create instructor + class</button>
+  </form>
+
+  <div class="back">
+    <a href="{{ url_for('register_select_role') }}">Back</a> |
+    <a href="{{ url_for('login_page') }}">Login</a>
+  </div>
 </div>
 </body>
 </html>

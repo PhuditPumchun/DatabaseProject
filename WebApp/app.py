@@ -8,6 +8,7 @@ from StudentClassDetailServices import StudentClassDetailServices
 from StudentEnrollmentServices import StudentEnrollmentServices
 from StudentPaymentServices import StudentPaymentServices
 from StudentProfileServices import StudentProfileServices
+from RegistrationServices import RegistrationServices
 
 app = Flask(__name__)
 # ต้องมี SECRET_KEY สำหรับใช้ session
@@ -336,11 +337,12 @@ def student_update_account():
 # [ADDED] Register routes
 # =================================================================
 
+# [ADDED] choose role page (Student / Instructor)
 @app.route('/register', methods=['GET'])
 def register_select_role():
-    """
-    หน้าเลือก role: Student / Instructor
-    """
+    # simple page with 2 buttons:
+    #  - go to /register/student
+    #  - go to /register/instructor
     return render_template('register.html')
 
 @app.route('/register/student', methods=['GET', 'POST'])
@@ -371,12 +373,119 @@ def register_student():
             error_msg=result.get('message', 'Registration failed.')
         )
 
-@app.route('/register/instructor', methods=['GET'])
-def register_instructor_placeholder():
-    """
-    หน้านี้ยังไม่ทำจริง แต่สร้าง route ไว้ไม่ให้ 404
-    """
-    return render_template('register_instructor.html')
+# [MODIFIED] /register/instructor route in app.py
+@app.route('/register/instructor', methods=['GET', 'POST'])
+def register_instructor():
+    if request.method == 'GET':
+        # We still need subject list for the dropdown
+        subjects = RegistrationServices.get_subject_list()
+        return render_template(
+            'register_instructor.html',
+            subjects=subjects,
+            error_msg=None
+        )
+
+    # POST: read all form fields
+    name = request.form.get('name')
+    subject_id = request.form.get('subject_id')
+    exp_year = request.form.get('exp_year')
+    username = request.form.get('username')
+    password = request.form.get('password')
+
+    center_name = request.form.get('center_name')
+    center_address = request.form.get('center_address')
+
+    class_day = request.form.get('class_day')
+    class_time = request.form.get('class_time')
+    max_students = request.form.get('max_students')
+    class_price = request.form.get('class_price')
+
+    # Convert numeric fields
+    try:
+        subject_id = int(subject_id) if subject_id else None
+    except ValueError:
+        subject_id = None
+
+    try:
+        exp_year = int(exp_year) if exp_year else None
+    except ValueError:
+        exp_year = None
+
+    try:
+        max_students = int(max_students) if max_students else None
+    except ValueError:
+        max_students = None
+
+    try:
+        class_price = int(class_price) if class_price else None
+    except ValueError:
+        class_price = None
+
+    # Call service to insert Instructor + Center + ClassSlot
+    result = RegistrationServices.register_instructor(
+        name=name,
+        subject_id=subject_id,
+        exp_year=exp_year,
+        username=username,
+        password=password,
+        center_name=center_name,
+        center_address=center_address,
+        class_day=class_day,
+        class_time=class_time,
+        max_students=max_students,
+        class_price=class_price,
+    )
+
+    if result.get("success"):
+        # success: go back to login so the new instructor can log in
+        return redirect(url_for('login_page'))
+
+    # failed -> reload form with error and same subject dropdown
+    subjects = RegistrationServices.get_subject_list()
+    return render_template(
+        'register_instructor.html',
+        subjects=subjects,
+        error_msg=result.get("message", "Registration failed.")
+    )
+
+
+    # POST: read form fields
+    name = request.form.get('name')
+    subject_id = request.form.get('subject_id')
+    exp_year = request.form.get('exp_year')
+    username = request.form.get('username')
+    password = request.form.get('password')
+
+    # basic int casting for numeric columns
+    try:
+        subject_id = int(subject_id) if subject_id else None
+    except ValueError:
+        subject_id = None
+
+    try:
+        exp_year = int(exp_year) if exp_year else None
+    except ValueError:
+        exp_year = None
+
+    result = RegistrationServices.register_instructor(
+        name=name,
+        subject_id=subject_id,
+        exp_year=exp_year,
+        username=username,
+        password=password,
+    )
+
+    if result.get("success"):
+        # ✅ สมัครเสร็จ ส่งกลับหน้า login ให้ instructor ไปล็อกอินด้วย iUsername/iPassword
+        return redirect(url_for('login_page'))  # <-- ใช้ login_page เดิมของคุณ
+
+    # ❌ สมัครไม่ผ่าน → render form พร้อม error
+    subjects = RegistrationServices.get_subject_list()
+    return render_template(
+        'register_instructor.html',
+        subjects=subjects,
+        error_msg=result.get("message", "Registration failed.")
+    )
 
 # --------------------------
 # Logout
