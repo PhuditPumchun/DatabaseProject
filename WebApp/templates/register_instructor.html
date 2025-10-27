@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Register Instructor</title>
+    <style>
+        body { font-family: Arial, sans-serif; background:#f5f5f5; padding:40px; }
+        .box {
+            max-width:400px;
+            margin:auto;
+            background:#fff;
+            border-radius:8px;
+            box-shadow:0 4px 16px rgba(0,0,0,0.1);
+            padding:24px;
+            text-align:center;
+        }
+        h2 { margin-top:0; color:#333; font-size:1.2rem; }
+        .back {
+            margin-top:20px;
+            font-size:0.8rem;
+        }
+        .back a {
+            color:#007bff;
+            text-decoration:none;
+        }
+        .back a:hover { text-decoration:underline; }
+    </style>
+</head>
+<body>
+<div class="box">
+    <h2>สมัคร Instructor</h2>
+    <p>ฟังก์ชันนี้จะพร้อมใช้งานในอนาคต</p>
+
+    <div class="back">
+        <a href="{{ url_for('register_select_role') }}">ย้อนกลับ</a> |
+        <a href="{{ url_for('login_page') }}">ไปหน้า Login</a>
+    </div>
+</div>
+</body>
+</html>
