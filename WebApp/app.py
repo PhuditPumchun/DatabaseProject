@@ -8,18 +8,20 @@ from StudentClassDetailServices import StudentClassDetailServices
 from StudentProfileServices import StudentProfileServices
 
 app = Flask(__name__)
-# ต้องมี SECRET_KEY สำหรับใช้ session
 app.config['SECRET_KEY'] = 'your_super_secret_key_here' 
 
+# --------------------------
+# Login Page
+# --------------------------
 @app.route('/', methods=['GET'])
 @app.route('/login', methods=['GET'])
 def login_page():
-    # แสดงฟอร์มล็อคอิน (login.html)
-    # ใน login.html เราจะใส่ลิงก์ไป /register เพิ่ม
+    """แสดงฟอร์มล็อกอิน (login.html)"""
+    # ใน login.html สามารถมีลิงก์ไป /register ได้
     return render_template('login.html')
 
 # --------------------------
-# Login API (AJAX/JS) - ถ้ามีเรียกใช้
+# Login API (AJAX/JS)
 # --------------------------
 @app.route('/api/login', methods=['POST'])
 def api_login():
@@ -54,12 +56,9 @@ def handle_login_form():
             return redirect(url_for('student_dashboard'))
 
         else:
-            # fallback เผื่อ role แปลก (ไม่น่ามี)
             redirect_url = response.get('redirect_url', url_for('login_page'))
             return redirect(redirect_url)
     else:
-        # ล็อกอินไม่ผ่าน -> กลับหน้า login
-        # (ถ้าอยากแสดง error message สวย ๆ ให้ใช้ flash แล้วโชว์ใน template)
         return redirect(url_for('login_page'))
 
 # --------------------------
@@ -95,32 +94,29 @@ def instructor_edit_dashboard():
     current_data = InstructorDashboardServices.get_dashboard_data(iID)
 
     if current_data:
-        return render_template('instructorEditDashboard.html', 
-                                instructor_name=iName,
-                                data=current_data)
+        return render_template(
+            'instructorEditDashboard.html', 
+            instructor_name=iName,
+            data=current_data
+        )
     else:
         return "Error loading data for editing.", 500
 
-@app.route('/instructor/update', methods=['POST'])
 @app.route('/instructor/update', methods=['POST'])
 def update_instructor():
     iID = session.get('iID')
     if not iID:
         return redirect(url_for('login_page'))
 
-    # รับค่าจากฟอร์ม
     tID        = request.form.get('tID', type=int)
     iName      = request.form.get('iName')
     tName      = request.form.get('tName')
     address    = request.form.get('address')
-
-    # >>> เพิ่มส่วนของสื่อ / URL <<<
-    mediaID     = request.form.get('mediaID', type=int)  # ต้องมี hidden field ในฟอร์ม
+    mediaID     = request.form.get('mediaID', type=int)
     profile_url = request.form.get('profile_url') or None
     reward_url  = request.form.get('reward_url')  or None
     video_url   = request.form.get('video_url')   or None
 
-    # เรียก Service พร้อมส่งพารามิเตอร์ครบ
     success = InstructorEditDashboardServices.update_data(
         iID=iID,
         tID=tID,
@@ -143,14 +139,12 @@ def update_instructor():
 # --------------------------
 @app.route('/student/dashboard', methods=['GET'])
 def student_dashboard():
-    # session info
     sID = session.get('sID')
     sName = session.get('sName', 'Student')
 
     if not sID:
         return redirect(url_for('login_page'))
 
-    # NEW: read optional filter
     current_day = request.args.get('day', default="", type=str)
 
     dashboard_data = StudentDashboardServices.get_dashboard_data(
@@ -163,7 +157,7 @@ def student_dashboard():
             'student_dashboard.html',
             student_name=sName,
             data=dashboard_data,
-            current_day=current_day  # <- pass to template
+            current_day=current_day
         )
     else:
         return "Error loading student dashboard data.", 500
@@ -186,14 +180,17 @@ def student_class_detail(cID):
         )
     return f"Class ID {cID} not found or data error.", 404
 
+# --------------------------
+# Student Profile (GET)
+# --------------------------
 @app.route('/student/profile', methods=['GET'])
 def student_profile():
     sID = session.get('sID')
     sName = session.get('sName')
 
-    if not sID: return redirect(url_for('login_page'))
+    if not sID: 
+        return redirect(url_for('login_page'))
 
-    # **เรียกใช้ StudentProfileServices**
     profile_data = StudentProfileServices.get_full_profile(sID)
     payment_history = StudentProfileServices.get_payment_history(sID)
 
@@ -201,33 +198,73 @@ def student_profile():
         return render_template(
             'student_profile.html',
             student_name=sName,
-            profile=profile_data['profile'], # (sID, sName, sUsername)
+            profile=profile_data['profile'],
             enrolled_classes=profile_data['enrolled_classes'],
-            payment_history=payment_history # ข้อมูลประวัติการจ่าย
+            payment_history=payment_history
         )
     return "Error loading student profile data.", 500
 
-# =================================================================
-# [ADDED] Register routes
-# =================================================================
+# --------------------------
+# Student Edit Profile (GET)
+# --------------------------
+@app.route('/student/profile/edit', methods=['GET'])
+def student_edit_profile():
+    sID = session.get('sID')
+    sName = session.get('sName')
+    if not sID:
+        return redirect(url_for('login_page'))
 
+    profile_data = StudentProfileServices.get_full_profile(sID)
+    payment_history = StudentProfileServices.get_payment_history(sID)
+
+    if profile_data and profile_data['profile']:
+        return render_template(
+            'student_profile.html',
+            student_name=sName,
+            profile=profile_data['profile'],
+            enrolled_classes=profile_data['enrolled_classes'],
+            payment_history=payment_history,
+            edit_mode=True
+        )
+    return "Error loading student profile for edit.", 500
+
+# ==== Student Account (Edit form submit) ====
+@app.route('/student/profile/update-account', methods=['POST'])
+def student_update_account():
+    cur_sid = session.get('sID')
+    if not cur_sid:
+        return redirect(url_for('login_page'))
+
+    sName     = request.form.get('sName')
+    sUsername = request.form.get('sUsername')
+    new_sid   = request.form.get('new_sID', type=int)
+
+    ok = StudentProfileServices.update_account(
+        sID=cur_sid,
+        new_sID=new_sid,
+        sName=sName,
+        sUsername=sUsername
+    )
+
+    if ok and new_sid:
+        session['sID'] = new_sid
+    if ok and sName:
+        session['sName'] = sName
+
+    return redirect(url_for('student_profile'))
+
+# --------------------------
+# Register
+# --------------------------
 @app.route('/register', methods=['GET'])
 def register_select_role():
-    """
-    หน้าเลือก role: Student / Instructor
-    """
     return render_template('register.html')
 
 @app.route('/register/student', methods=['GET', 'POST'])
 def register_student():
-    """
-    GET  -> แสดงฟอร์มสมัครนักเรียน
-    POST -> รับข้อมูลจากฟอร์มและสมัคร
-    """
     if request.method == 'GET':
         return render_template('register_student.html')
 
-    # ถ้าเป็น POST
     name = request.form.get('name')
     username = request.form.get('username')
     password = request.form.get('password')
@@ -235,12 +272,8 @@ def register_student():
     result = RegistrationServices.register_student(name, username, password)
 
     if result.get('success'):
-        # สมัครเสร็จ -> กลับหน้า login ให้ลองล็อคอินได้เลย
         return redirect(url_for('login_page'))
     else:
-        # สมัครไม่ผ่าน เช่น username ซ้ำ
-        # ตรงนี้เราง่าย ๆ: render หน้าเดิมแล้วโชว์ error
-        # (ถ้าอยากสวย ใช้ flash แล้วแสดงใน template)
         return render_template(
             'register_student.html',
             error_msg=result.get('message', 'Registration failed.')
@@ -248,9 +281,6 @@ def register_student():
 
 @app.route('/register/instructor', methods=['GET'])
 def register_instructor_placeholder():
-    """
-    หน้านี้ยังไม่ทำจริง แต่สร้าง route ไว้ไม่ให้ 404
-    """
     return render_template('register_instructor.html')
 
 # --------------------------
@@ -258,12 +288,38 @@ def register_instructor_placeholder():
 # --------------------------
 @app.route('/logout')
 def logout():
-    # เคลียร์ session ทั้ง instructor / student
     session.pop('iID', None)
     session.pop('iName', None)
     session.pop('sID', None)
     session.pop('sName', None)
     return redirect(url_for('login_page'))
 
+@app.route('/student/profile/update', methods=['POST'])
+def student_update_profile():
+    sID = session.get('sID')
+    if not sID:
+        return redirect(url_for('login_page'))
+
+    sName = request.form.get('sName')
+    sUsername = request.form.get('sUsername')
+    sPassword = request.form.get('sPassword')  # optional
+
+    ok = StudentProfileServices.update_profile(
+        sID=sID,
+        sName=sName,
+        sUsername=sUsername,
+        sPassword=sPassword
+    )
+
+    if ok and sName:
+        session['sName'] = sName  # อัปเดตชื่อบน navbar/หัวหน้าเพจ
+
+    return redirect(url_for('student_profile'))
+
+
+# --------------------------
+# Run Flask App
+# --------------------------
 if __name__ == '__main__':
     app.run(debug=True)
+
