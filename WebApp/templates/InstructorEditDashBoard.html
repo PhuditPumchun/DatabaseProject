@@ -1,3 +1,4 @@
+<!-- templates/instructor_edit_dashboard.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,71 +8,83 @@
         body { font-family: Arial, sans-serif; padding: 20px; background-color: #f8f9fa; }
         .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
         h1 { color: #007bff; margin-bottom: 25px; }
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; }
-        .form-group input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         
-        .button-group { display: flex; justify-content: flex-start; gap: 10px; margin-top: 30px; }
+        .form-group { margin-bottom: 15px; display: flex; align-items: center; }
+        .form-group label { font-weight: bold; width: 180px; flex-shrink: 0; }
+        .form-group input[type="text"] { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; max-width: 400px; }
         
-        .save-btn {
-            padding: 10px 20px;
-            background-color: #28a745; /* สีเขียว */
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1em;
-        }
-        .cancel-btn {
-            padding: 10px 20px;
-            background-color: #6c757d; /* สีเทา */
-            color: white;
-            border: none;
-            border-radius: 4px;
-            text-decoration: none;
-            font-size: 1em;
-        }
-        .save-btn:hover { background-color: #1e7e34; }
-        .cancel-btn:hover { background-color: #5a6268; }
+        .button-group { margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; text-align: right; }
+        .save-btn, .cancel-btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; }
+        .save-btn { background-color: #28a745; color: white; margin-left: 10px; }
+        .cancel-btn { background-color: #6c757d; color: white; text-decoration: none; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Edit Profile and Center</h1>
-
+        <h1>Edit Profile and Center Details</h1>
+        
         <form method="POST" action="{{ url_for('update_instructor') }}">
-            
+            <!-- Hidden Fields ที่จำเป็นสำหรับการ Update -->
             <input type="hidden" name="iID" value="{{ session.get('iID') }}">
+            
             {% if data.managed_center %}
-                <input type="hidden" name="tID" value="{{ data.managed_center[2] }}">
+                <input type="hidden" name="tID" value="{{ data.managed_center[2] }}"> 
             {% endif %}
 
+            <!-- ส่ง mediaID ไปด้วย (คอลัมน์ที่ 5 จาก data.profile: data.profile[5]) -->
+            <input type="hidden" name="mediaID" value="{{ data.profile[5] }}"> 
+
+            <h3>Instructor Profile</h3>
+            
             <div class="form-group">
-                <label for="iName">Instructor Name:</label>
-                <input type="text" id="iName" name="iName" 
-                       value="{{ instructor_name }}" required>
+                <label for="iName">Name:</label>
+                <input type="text" id="iName" name="iName" value="{{ instructor_name }}" required>
             </div>
             
-            <hr>
+            <div class="form-group">
+                <label>Subject:</label>
+                <!-- ข้อมูลนี้แสดงอย่างเดียว ไม่สามารถแก้ไขได้ -->
+                <p style="margin: 0;">{{ data.profile[1] if data.profile[1] else 'N/A' }}</p>
+            </div>
+
+            <h3 style="margin-top: 30px;">Media URLs</h3>
+
+            <!-- 1. ช่องกรอก Profile Image URL -->
+            <div class="form-group">
+                <label for="profile_url">Profile Image URL:</label>
+                <input type="text" id="profile_url" name="profile_url" value="{{ data.profile[3] }}" required>
+            </div>
             
+            <!-- 2. ช่องกรอก Reward URL -->
+            <div class="form-group">
+                <label for="reward_url">Reward/Cert URL:</label>
+                <input type="text" id="reward_url" name="reward_url" value="{{ data.profile[4] }}" required>
+            </div>
+
+            <!-- 3. ช่องกรอก Video URL -->
+            <div class="form-group">
+                <label for="video_url">Video URL:</label>
+                <input type="text" id="video_url" name="video_url" value="{{ data.profile[6] }}" required>
+            </div>
+
+
             {% if data.managed_center %}
-                <h2>Center Management</h2>
+                <h3 style="margin-top: 30px;">Center Details (Center Manager)</h3>
+                
                 <div class="form-group">
                     <label for="tName">Center Name:</label>
-                    <input type="text" id="tName" name="tName" 
-                           value="{{ data.managed_center[0] }}" required>
+                    <input type="text" id="tName" name="tName" value="{{ data.managed_center[0] }}" required>
                 </div>
+                
                 <div class="form-group">
                     <label for="address">Address:</label>
-                    <input type="text" id="address" name="address" 
-                           value="{{ data.managed_center[1] }}" required>
+                    <input type="text" id="address" name="address" value="{{ data.managed_center[1] }}" required>
                 </div>
-                <hr>
             {% endif %}
 
             <div class="button-group">
-                <button type="submit" class="save-btn">Save Changes</button>
                 <a href="{{ url_for('instructor_dashboard') }}" class="cancel-btn">Cancel</a>
+                <button type="submit" class="save-btn">Save Changes</button>
             </div>
         </form>
     </div>

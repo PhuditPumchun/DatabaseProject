@@ -1,5 +1,3 @@
-# LoginServices.py
-
 import os
 from dotenv import load_dotenv
 import psycopg2

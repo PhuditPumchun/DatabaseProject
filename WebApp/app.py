@@ -3,13 +3,12 @@ from LoginServices import LoginServices
 from InstructorDashboardServices import InstructorDashboardServices
 from StudentDashboardServices import StudentDashboardServices
 from RegistrationServices import RegistrationServices  # [ADDED]
+from InstructorEditDashboardServices import InstructorEditDashboardServices
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your_super_secret_key_here'  # เดิมมีอยู่แล้ว OK
+# ต้องมี SECRET_KEY สำหรับใช้ session
+app.config['SECRET_KEY'] = 'your_super_secret_key_here' 
 
-# --------------------------
-# Login page (GET)
-# --------------------------
 @app.route('/', methods=['GET'])
 @app.route('/login', methods=['GET'])
 def login_page():
@@ -82,6 +81,52 @@ def instructor_dashboard():
         )
     else:
         return "Error loading dashboard data.", 500
+    
+@app.route('/instructor/edit', methods=['GET'])
+def instructor_edit_dashboard():
+    iID = session.get('iID')
+    iName = session.get('iName', 'Instructor')
+
+    if not iID:
+        return redirect(url_for('login_page'))
+
+    current_data = InstructorDashboardServices.get_dashboard_data(iID)
+
+    if current_data:
+        return render_template('instructorEditDashboard.html', 
+                                instructor_name=iName,
+                                data=current_data)
+    else:
+        return "Error loading data for editing.", 500
+
+@app.route('/instructor/update', methods=['POST'])
+def update_instructor():
+    iID = session.get('iID')
+    
+    if not iID:
+        return redirect(url_for('login_page'))
+
+    # รับค่าจากฟอร์ม
+    tID = request.form.get('tID', type=int)
+    iName = request.form.get('iName')
+    tName = request.form.get('tName')
+    address = request.form.get('address')
+    
+    # เรียกใช้ Service ที่ถูกต้อง
+    success = InstructorEditDashboardServices.update_data(
+        iID=iID,
+        tID=tID,
+        iName=iName,
+        tName=tName,
+        address=address
+    )
+    
+    if success:
+        session['iName'] = iName # อัปเดตชื่อใน Session
+    # else:
+        # flash('Update failed!', 'danger')
+
+    return redirect(url_for('instructor_dashboard'))
 
 # --------------------------
 # Student Dashboard (GET)

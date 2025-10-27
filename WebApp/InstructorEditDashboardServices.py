@@ -25,8 +25,8 @@ class InstructorEditDashboardServices:
             return None
 
     @staticmethod
-    def update_data(iID, tID, iName, tName, address):
-        """อัปเดตชื่อ Instructor และรายละเอียด Center Manager"""
+    def update_data(iID, tID, mediaID, iName, iUsername, iPassword, tName, address, profile_url, reward_url, video_url):
+        """อัปเดตข้อมูล Instructor, Center Manager, URL สื่อ, และ Security"""
         conn = InstructorEditDashboardServices._get_db_connection()
         if not conn:
             return False
@@ -34,18 +34,39 @@ class InstructorEditDashboardServices:
         try:
             cursor = conn.cursor()
             
-            # 1. UPDATE ชื่อ Instructor
-            cursor.execute("""
-                UPDATE Instructor SET iName = %s WHERE iID = %s;
-            """, (iName, iID))
+            # 1. UPDATE ชื่อและ Username ของ Instructor
+            update_instructor_sql = """
+                UPDATE Instructor 
+                SET iName = %s, iUsername = %s 
+                WHERE iID = %s;
+            """
+            params = [iName, iUsername, iID]
 
-            # 2. UPDATE ชื่อ Tutoring Center และ Address (ต้องเป็น Center ที่เขารับผิดชอบ)
+            # 1.1. หากมีการกรอก New Password, ให้ทำการ Update iPassword ด้วย
+            if iPassword:
+                # WARNING: ในโปรเจกต์จริง ต้องใช้ Password Hashing เช่น bcrypt ก่อนบันทึก
+                update_instructor_sql = update_instructor_sql.replace(
+                    "WHERE iID = %s", ", iPassword = %s WHERE iID = %s"
+                )
+                params.insert(2, iPassword)
+            
+            cursor.execute(update_instructor_sql, tuple(params))
+
+            # 2. UPDATE ชื่อ Tutoring Center และ Address
             cursor.execute("""
                 UPDATE TutoringCenter t 
                 SET tName = %s, address = %s 
                 WHERE tID = %s 
                 AND EXISTS (SELECT 1 FROM CenterManager WHERE tID = t.tID AND iID = %s);
             """, (tName, address, tID, iID))
+            
+            # 3. UPDATE InstructorMedia URL 
+            if mediaID is not None:
+                 cursor.execute("""
+                    UPDATE InstructorMedia 
+                    SET imageProfile = %s, rewardURL = %s, videoURL = %s
+                    WHERE mediaID = %s AND iID = %s;
+                 """, (profile_url, reward_url, video_url, mediaID, iID))
             
             conn.commit()
             cursor.close()
