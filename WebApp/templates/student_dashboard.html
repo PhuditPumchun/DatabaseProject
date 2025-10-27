@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
+            color: #222;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            padding: 24px 32px;
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            gap: 12px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 16px;
+        }
+
+        .header-left h1 {
+            margin: 0;
+            color: #007bff;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        .header-left p {
+            margin: 4px 0;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .logout-btn {
+            background-color: #dc3545;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 14px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .logout-btn:hover {
+            background-color: #c82333;
+        }
+
+        /* filter row (ยังไม่ต้องทำงานจริง แค่โชว์ UI) */
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
+            margin-bottom: 24px;
+            font-size: 0.85rem;
+        }
+        .filter-chip {
+            background: #f0f0f0;
+            padding: 6px 10px;
+            border-radius: 16px;
+            cursor: pointer;
+            border: 1px solid #d9d9d9;
+        }
+        .filter-chip.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        /* card grid */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill,minmax(270px,1fr));
+            gap: 20px;
+        }
+
+        .class-card {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.07);
+            padding: 16px;
+            border: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .class-header {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .avatar {
+            width: 64px;
+            height: 64px;
+            flex-shrink: 0;
+            border-radius: 8px;
+            object-fit: cover;
+            background-color: #ddd;
+        }
+
+        .class-main {
+            flex: 1;
+        }
+
+        .teacher-name {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0;
+            color: #333;
+        }
+
+        .subject-line {
+            font-size: 0.8rem;
+            margin: 2px 0 4px;
+            color: #666;
+        }
+
+        .enrolled-badge {
+            background-color: #28a745;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 3px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-left: 6px;
+        }
+
+        .class-body {
+            font-size: 0.8rem;
+            color: #444;
+            line-height: 1.4;
+            margin-top: 12px;
+        }
+
+        .class-body div {
+            margin-bottom: 4px;
+        }
+
+        .price-line {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #007bff;
+        }
+
+        .action-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 12px;
+        }
+
+        .enroll-btn {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .enroll-btn[disabled] {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- ===== Header / Profile ===== -->
+    <div class="header-section">
+        <div class="header-left">
+            <h1>Welcome, {{ student_name }}</h1>
+            {% if data.student_profile %}
+                <p>ID: {{ data.student_profile[0] }}</p>
+                <p>Name: {{ data.student_profile[1] }}</p>
+            {% else %}
+                <p style="color:#c00;">(ไม่พบข้อมูลนักเรียน)</p>
+            {% endif %}
+        </div>
+
+        <div class="header-right">
+            <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+        </div>
+    </div>
+
+    <!-- ===== Filter Chips (UI อย่างเดียว) ===== -->
+    <div class="filter-bar">
+        <div class="filter-chip active">ทั้งหมด</div>
+        <div class="filter-chip">Monday</div>
+        <div class="filter-chip">Tuesday</div>
+        <div class="filter-chip">Wednesday</div>
+        <div class="filter-chip">Thursday</div>
+        <div class="filter-chip">Friday</div>
+        <div class="filter-chip">Saturday</div>
+        <div class="filter-chip">Sunday</div>
+    </div>
+
+    <!-- ===== Class Cards ===== -->
+    <div class="card-grid">
+
+        {% if data.classes and data.classes|length > 0 %}
+            {% for cls in data.classes %}
+                <!-- mapping index:
+                    0 cID
+                    1 cDay
+                    2 cTime
+                    3 studentMax
+                    4 studentNow
+                    5 price
+                    6 tName
+                    7 address
+                    8 iName
+                    9 expYear
+                    10 subjectName
+                    11 imageProfile
+                    12 enrolled (1/0)
+                -->
+
+                <div class="class-card">
+
+                    <div class="class-header">
+                        <img class="avatar"
+                             src="{{ cls[11] if cls[11] else 'https://via.placeholder.com/64' }}"
+                             alt="instructor photo">
+
+                        <div class="class-main">
+                            <p class="teacher-name">
+                                {{ cls[8] }}
+                                {% if cls[12] == 1 %}
+                                    <span class="enrolled-badge">Enrolled</span>
+                                {% endif %}
+                            </p>
+                            <p class="subject-line">
+                                {{ cls[10] }} • {{ cls[9] }} yrs exp
+                            </p>
+                            <p class="subject-line">
+                                {{ cls[6] }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="class-body">
+                        <div><strong>Day/Time:</strong> {{ cls[1] }} | {{ cls[2] }}</div>
+                        <div><strong>Location:</strong> {{ cls[7] }}</div>
+                        <div class="price-line">Price: ฿{{ cls[5] }}</div>
+
+                        <div>
+                            <strong>Seats left:</strong>
+                            {{ cls[3] - cls[4] }} / {{ cls[3] }}
+                        </div>
+                    </div>
+
+                    <div class="action-row">
+                        {% if cls[12] == 1 %}
+                            <button class="enroll-btn" disabled>Already Enrolled</button>
+                        {% elif (cls[3] - cls[4]) <= 0 %}
+                            <button class="enroll-btn" disabled>Full</button>
+                        {% else %}
+                            <!-- ปุ่มนี้ยังไม่ผูก backend สมัครเรียนจริง เป็น placeholder -->
+                            <button class="enroll-btn">Enroll</button>
+                        {% endif %}
+                    </div>
+
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>ไม่มีคลาสที่เปิดอยู่ในระบบตอนนี้</p>
+        {% endif %}
+
+    </div>
+
+</div>
+
+</body>
+</html>

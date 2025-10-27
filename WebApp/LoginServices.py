@@ -7,10 +7,9 @@ load_dotenv()
 
 class LoginServices:
     
-    # ... (เมธอด _get_db_connection เหมือนเดิม) ...
     @staticmethod
     def _get_db_connection():
-        # ... (โค้ดเชื่อมต่อฐานข้อมูลเดิม) ...
+        """สร้างและคืนค่า connection object ไปยังฐานข้อมูล PostgreSQL"""
         try:
             conn = psycopg2.connect(
                 dbname=os.getenv('DB_NAME'),
@@ -24,10 +23,12 @@ class LoginServices:
             print(f"Database connection error: {e}")
             return None
 
-    # ... (เมธอด _verify_user_and_get_id เหมือนเดิม) ...
     @staticmethod
     def _verify_user_and_get_id(username, password):
-        # ... (โค้ดค้นหา iID เหมือนเดิม) ...
+        """
+        ใช้สำหรับ Instructor เท่านั้น
+        ตรวจสอบ username/password -> คืน (iID, iName)
+        """
         conn = LoginServices._get_db_connection()
         if not conn:
             return None
@@ -40,7 +41,7 @@ class LoginServices:
                 WHERE iUsername = %s AND iPassword = %s;
             """
             cursor.execute(sql_query, (username, password))
-            result = cursor.fetchone() 
+            result = cursor.fetchone()
             cursor.close()
             return result
         
@@ -52,25 +53,66 @@ class LoginServices:
             if conn:
                 conn.close()
 
-    # ----------------------------------------------------
-    # เมธอดหลักในการตรวจสอบสิทธิ์ (authenticate ยังคงเดิม)
-    # ----------------------------------------------------
+    # [MODIFIED] ฟังก์ชันสำหรับ student: ใช้ sUsername และ sPassword
+    @staticmethod
+    def _verify_student_and_get_id(username, password):
+        """
+        ตรวจสอบ Student โดยใช้ sUsername และ sPassword (เหมือน Instructor)
+        คืนค่า (sID, sName)
+        """
+        conn = LoginServices._get_db_connection()
+        if not conn:
+            return None
+
+        try:
+            cursor = conn.cursor()
+            sql_query = """
+                SELECT sID, sName
+                FROM Student
+                WHERE sUsername = %s AND sPassword = %s;
+            """
+            cursor.execute(sql_query, (username, password))
+            result = cursor.fetchone()
+            cursor.close()
+            return result
+
+        except psycopg2.Error as e:
+            print(f"SQL execution error during student login: {e}")
+            return None
+
+        finally:
+            if conn:
+                conn.close()
+
+    # [MODIFIED] authenticate ตอนนี้รองรับ student ด้วย Logic ที่แก้ไข
     @staticmethod
     def authenticate(username, password, role):
-        # ... (Logic การตรวจสอบสิทธิ์เหมือนเดิม) ...
-        
+        """
+        ใช้โดย /api/login และ /login (POST)
+        จะคืน dict + status_code
+        """
         if not username or not password or not role:
             return {"success": False, "message": "Required fields missing."}, 400
 
         if role == 'student':
-            return {"success": False, "message": "Student login not implemented yet."}, 401
+            student_info = LoginServices._verify_student_and_get_id(username, password)
+            if student_info:
+                sID, sName = student_info
+                # NOTE: ใน app.py เก่า Redirect Student ไป YouTube 
+                # ถ้าต้องการ Dashboard Student ต้องเพิ่ม Route ใน app.py ด้วย
+                return {
+                    "success": True,
+                    "sID": sID,
+                    "sName": sName,
+                    "redirect_url": "https://www.youtube.com/watch?v=u_c1tRmj7E4"
+                }, 200
+            else:
+                return {"success": False, "message": "Invalid Student credentials."}, 401
             
         elif role == 'instructor':
             user_info = LoginServices._verify_user_and_get_id(username, password)
-            
             if user_info:
                 iID, iName = user_info
-                # คืนค่า success=True และ iID เพื่อให้ app.py นำไปใช้ต่อ
                 return {"success": True, "iID": iID, "iName": iName}, 200 
             else:
                 return {"success": False, "message": "Invalid Instructor credentials."}, 401
