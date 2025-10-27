@@ -1,4 +1,3 @@
-<!-- templates/instructor_dashboard.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -95,6 +94,27 @@
             color: #888; font-size: 0.9em; text-align: center;
         }
 
+        /* สไตล์สำหรับ Video Section (ใหม่) */
+        .video-section { 
+             margin-top: 30px; 
+             padding: 15px; 
+             border: 1px solid #dee2e6; 
+             border-radius: 6px; 
+             background-color: #ffffff;
+        }
+        .video-player-container {
+             width: 100%;
+             max-width: 600px; /* จำกัดขนาดวิดีโอ */
+             margin: 15px auto 0;
+        }
+        .video-player {
+             width: 100%;
+             aspect-ratio: 16 / 9;
+             border-radius: 8px;
+        }
+        .video-section h2 { margin-top: 0; margin-bottom: 15px; }
+
+
         .center-management, .class-section { 
             margin-top: 30px; padding: 15px; border: 1px solid #dee2e6; 
             border-radius: 6px; background-color: #ffffff;
@@ -156,6 +176,30 @@
                 </div>
             </div>
         {% endif %}
+
+        <div class="separator"></div>
+
+        <!-- ===== ส่วนใหม่: Video Introduction ===== -->
+        <div class="video-section">
+            <h2>Video Introduction</h2>
+            <div class="video-player-container">
+                {% if data.profile and data.profile[6] %}
+                    <!-- data.profile[6] คือ videoURL -->
+                    <iframe 
+                        class="video-player"
+                        src="{{ data.profile[6] }}" 
+                        title="Instructor Introduction Video"
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                        referrerpolicy="strict-origin-when-cross-origin" 
+                        allowfullscreen>
+                    </iframe>
+                {% else %}
+                    <p style="color:#dc3545; text-align: center;">No introduction video set for this instructor.</p>
+                {% endif %}
+            </div>
+        </div>
+        <!-- ====================================== -->
 
 
         {% if data.managed_center %}

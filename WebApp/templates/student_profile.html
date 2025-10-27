@@ -1,0 +1,242 @@
+<!-- templates/student_profile.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ student_name }}'s Profile</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f8f9fa; }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        h1 { color: #007bff; margin-top: 0; }
+
+        /* Layout หลัก: Tabs ด้านซ้าย, Content ด้านขวา */
+        .profile-layout {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        /* Tab Bar ด้านซ้าย */
+        .tab-bar {
+            flex-shrink: 0;
+            width: 200px;
+            background-color: #e9ecef;
+            border-radius: 6px;
+            padding: 10px 0;
+            height: fit-content;
+        }
+        .tab-bar a {
+            display: block;
+            padding: 15px 15px;
+            text-decoration: none;
+            color: #495057;
+            font-weight: bold;
+            border-bottom: 1px solid #dee2e6;
+            transition: background-color 0.2s;
+        }
+        .tab-bar a:last-child {
+            border-bottom: none;
+        }
+        .tab-bar a:hover {
+            background-color: #dee2e6;
+        }
+        .tab-bar a.active {
+            background-color: #007bff;
+            color: white;
+            border-left: 5px solid #0056b3;
+        }
+
+        /* Content Pane ด้านขวา */
+        .tab-content {
+            flex-grow: 1;
+            padding: 20px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            background-color: #ffffff;
+        }
+        .tab-pane {
+            display: none; /* ซ่อน Tab Content ที่ไม่ได้ใช้งาน */
+        }
+        .tab-pane.active {
+            display: block;
+        }
+        
+        /* สไตล์สำหรับตาราง */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; font-size: 0.9em; }
+        th { background-color: #f0f0f0; }
+
+        /* ข้อมูล Profile */
+        .profile-details p { margin: 5px 0; font-size: 1.1em; }
+        .profile-details strong { color: #007bff; }
+        
+        /* ปุ่ม Back/Logout */
+        .header-section { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 20px; 
+        }
+        .header-buttons { display: flex; gap: 10px; }
+        .back-btn, .logout-btn { 
+            padding: 8px 15px; 
+            border: none; 
+            border-radius: 4px; 
+            text-decoration: none; 
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+        .back-btn { 
+            background-color: #6c757d; 
+            color: white; 
+        }
+        .back-btn:hover { background-color: #5a6268; }
+        .logout-btn { 
+            background-color: #dc3545; 
+            color: white; 
+        }
+        .logout-btn:hover { background-color: #c82333; }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-section">
+            <h1>Student Profile: {{ student_name }}</h1>
+            <div class="header-buttons">
+                <a href="{{ url_for('student_dashboard') }}" class="back-btn">Back to Dashboard</a>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+            </div>
+        </div>
+
+        <div class="profile-layout">
+            <!-- Tab Bar (แถบซ้าย) -->
+            <div class="tab-bar">
+                <a href="#general-info" class="tab-link active" data-tab="general-info">
+                    General Info & Classes
+                </a>
+                <a href="#payment-history" class="tab-link" data-tab="payment-history">
+                    Payment History
+                </a>
+            </div>
+
+            <!-- Tab Content (เนื้อหาขวา) -->
+            <div class="tab-content">
+                
+                <!-- 1. General Info & Enrolled Classes -->
+                <div id="general-info" class="tab-pane active">
+                    <h2>Account Information</h2>
+                    <div class="profile-details">
+                        <!-- profile[1] คือ sName, profile[2] คือ sUsername, profile[0] คือ sID -->
+                        <p><strong>Name:</strong> {{ profile[1] }}</p>
+                        <p><strong>Username:</strong> {{ profile[2] }}</p>
+                        <p><strong>Student ID:</strong> {{ profile[0] }}</p>
+                    </div>
+
+                    <h2 style="margin-top: 30px;">Successfully Enrolled Classes (Paid)</h2>
+                    {% if enrolled_classes %}
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date Enrolled</th>
+                                    <th>Day/Time</th>
+                                    <th>Subject</th>
+                                    <th>Instructor</th>
+                                    <th>Center</th>
+                                    <th>Price (฿)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for class in enrolled_classes %}
+                                <tr>
+                                    <td>{{ class[0].strftime('%Y-%m-%d') if class[0] else 'N/A' }}</td>
+                                    <td>{{ class[1] }} / {{ class[2] }}</td>
+                                    <td>{{ class[5] }}</td>
+                                    <td>{{ class[4] }}</td>
+                                    <td>{{ class[3] }}</td>
+                                    <td>{{ "{:,.2f}".format(class[6]) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p>You have not successfully enrolled in any classes yet.</p>
+                    {% endif %}
+                </div>
+
+                <!-- 2. Payment History -->
+                <div id="payment-history" class="tab-pane">
+                    <h2>Full Payment History</h2>
+                    {% if payment_history %}
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Enroll Date</th>
+                                    <th>Class ID</th>
+                                    <th>Instructor</th>
+                                    <th>Center</th>
+                                    <th>Fee (฿)</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in payment_history %}
+                                <tr style="{% if payment[4] == 'Paid' %} background-color: #d4edda; color: #155724; {% elif payment[4] == 'Pending' %} background-color: #fff3cd; color: #856404; {% else %} background-color: #f8d7da; color: #721c24; {% endif %}">
+                                    <td>{{ payment[5].strftime('%Y-%m-%d') if payment[5] else 'N/A' }}</td>
+                                    <td>{{ payment[0] }}</td>
+                                    <td>{{ payment[1] }}</td>
+                                    <td>{{ payment[2] }}</td>
+                                    <td>{{ "{:,.2f}".format(payment[3]) }}</td>
+                                    <td><strong>{{ payment[4] }}</strong></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p>No payment history records found.</p>
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabs = document.querySelectorAll('.tab-link');
+            const panes = document.querySelectorAll('.tab-pane');
+
+            function switchTab(targetTab) {
+                // Remove active from all tabs and panes
+                tabs.forEach(tab => tab.classList.remove('active'));
+                panes.forEach(pane => pane.classList.remove('active'));
+
+                // Set active on the clicked tab link
+                const activeLink = document.querySelector(`.tab-link[data-tab="${targetTab}"]`);
+                if (activeLink) {
+                    activeLink.classList.add('active');
+                }
+
+                // Set active on the target pane
+                const activePane = document.getElementById(targetTab);
+                if (activePane) {
+                    activePane.classList.add('active');
+                }
+            }
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetTab = this.getAttribute('data-tab');
+                    switchTab(targetTab);
+                });
+            });
+
+            // Initial check for hash to load correct tab
+            // Loads 'general-info' by default
+            const initialTab = window.location.hash.substring(1) || 'general-info';
+            switchTab(initialTab);
+        });
+    </script>
+</body>
+</html>

@@ -4,6 +4,8 @@ from InstructorDashboardServices import InstructorDashboardServices
 from StudentDashboardServices import StudentDashboardServices
 from RegistrationServices import RegistrationServices  # [ADDED]
 from InstructorEditDashboardServices import InstructorEditDashboardServices
+from StudentClassDetailServices import StudentClassDetailServices
+from StudentProfileServices import StudentProfileServices
 
 app = Flask(__name__)
 # ต้องมี SECRET_KEY สำหรับใช้ session
@@ -157,6 +159,45 @@ def student_dashboard():
         )
     else:
         return "Error loading student dashboard data.", 500
+    
+@app.route('/student/class/<int:cID>', methods=['GET'])
+def student_class_detail(cID):
+    sID = session.get('sID')
+    sName = session.get('sName')
+    
+    if not sID:
+        return redirect(url_for('login_page'))
+        
+    class_detail = StudentClassDetailServices.get_class_detail(cID, sID)
+    
+    if class_detail:
+        return render_template(
+            'student_class_detail.html',
+            student_name=sName,
+            detail=class_detail
+        )
+    return f"Class ID {cID} not found or data error.", 404
+
+@app.route('/student/profile', methods=['GET'])
+def student_profile():
+    sID = session.get('sID')
+    sName = session.get('sName')
+
+    if not sID: return redirect(url_for('login_page'))
+
+    # **เรียกใช้ StudentProfileServices**
+    profile_data = StudentProfileServices.get_full_profile(sID)
+    payment_history = StudentProfileServices.get_payment_history(sID)
+
+    if profile_data and profile_data['profile']:
+        return render_template(
+            'student_profile.html',
+            student_name=sName,
+            profile=profile_data['profile'], # (sID, sName, sUsername)
+            enrolled_classes=profile_data['enrolled_classes'],
+            payment_history=payment_history # ข้อมูลประวัติการจ่าย
+        )
+    return "Error loading student profile data.", 500
 
 # =================================================================
 # [ADDED] Register routes

@@ -23,59 +23,71 @@
         .header-section {
             display: flex;
             justify-content: space-between;
-            flex-wrap: wrap;
-            align-items: flex-start;
-            gap: 12px;
+            align-items: center;
             border-bottom: 1px solid #e0e0e0;
             padding-bottom: 16px;
+            margin-bottom: 16px;
         }
 
         .header-left h1 {
             margin: 0;
             color: #007bff;
-            font-size: 1.4rem;
+            font-size: 1.6rem;
             font-weight: 600;
         }
         .header-left p {
-            margin: 4px 0;
+            margin: 4px 0 0;
             font-size: 0.9rem;
             color: #555;
         }
 
-        .logout-btn {
-            background-color: #dc3545;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            padding: 8px 14px;
+        .header-buttons { 
+            display: flex; 
+            gap: 10px; 
+        }
+        
+        .profile-btn, .logout-btn { 
+            padding: 8px 15px; 
+            border: none; 
+            border-radius: 6px; 
+            text-decoration: none; 
+            font-size: 0.9em;
+            font-weight: 600;
             cursor: pointer;
-            text-decoration: none;
-            font-size: 0.9rem;
+            transition: background-color 0.2s;
         }
-        .logout-btn:hover {
-            background-color: #c82333;
+        
+        .profile-btn { 
+            background-color: #28a745; /* สีเขียว */
+            color: white; 
         }
+        .profile-btn:hover { background-color: #1e7e34; }
+
+        .logout-btn { 
+            background-color: #dc3545; 
+            color: white; 
+        }
+        .logout-btn:hover { background-color: #c82333; }
 
         /* FILTER BAR */
         .filter-bar {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-            margin-top: 16px;
             margin-bottom: 24px;
-            font-size: 0.85rem;
         }
 
         .filter-chip {
             display: inline-block;
             background: #f0f0f0;
-            padding: 6px 10px;
-            border-radius: 16px;
+            padding: 8px 15px;
+            border-radius: 20px;
             cursor: pointer;
             border: 1px solid #d9d9d9;
             color: #333;
             text-decoration: none;
-            line-height: 1.2;
+            font-size: 0.85rem;
+            transition: all 0.2s;
         }
         .filter-chip.active {
             background: #007bff;
@@ -83,37 +95,55 @@
             border-color: #007bff;
             font-weight: 600;
         }
+        .filter-chip:hover:not(.active) {
+            background: #e0e0e0;
+        }
 
         /* CARD GRID */
         .card-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill,minmax(360px,1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 25px;
+        }
+        
+        /* CLASS CARD STYLES */
+        .class-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
         }
 
         .class-card {
             background: #fff;
             border-radius: 10px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.07);
-            padding: 16px 20px;
+            padding: 18px 20px;
             border: 1px solid #eee;
             display: flex;
             flex-direction: column;
+            transition: all 0.2s;
+            height: 100%; /* ทำให้ card มีความสูงเท่ากัน */
+        }
+        .class-card:hover {
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
         }
 
         .class-header {
             display: flex;
-            gap: 12px;
+            gap: 15px;
             align-items: flex-start;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
         }
 
         .avatar {
-            width: 64px;
-            height: 64px;
+            width: 70px;
+            height: 70px;
             flex-shrink: 0;
             border-radius: 8px;
             object-fit: cover;
-            background-color: #ddd;
+            border: 2px solid #007bff;
         }
 
         .class-main {
@@ -121,91 +151,97 @@
         }
 
         .teacher-name {
-            font-size: 1rem;
-            font-weight: 600;
-            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 0 0 4px 0;
             color: #333;
         }
-
+        
         .subject-line {
-            font-size: 0.8rem;
-            margin: 2px 0 4px;
+            font-size: 0.9rem;
+            margin: 0;
             color: #666;
         }
-
+        
         .enrolled-badge {
             background-color: #28a745;
             color: #fff;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             font-weight: 600;
-            padding: 3px 6px;
+            padding: 4px 8px;
             border-radius: 4px;
             display: inline-block;
-            margin-left: 6px;
+            margin-left: 8px;
         }
 
         .class-body {
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             color: #444;
-            line-height: 1.4;
-            margin-top: 12px;
+            line-height: 1.5;
+            margin-top: 15px;
+            flex-grow: 1; /* ให้ส่วนนี้ขยายตัวเพื่อดัน action-row ลงไป */
         }
 
-        .class-body div {
-            margin-bottom: 4px;
+        .class-body strong {
+            color: #555;
+            font-weight: 600;
         }
 
         .price-line {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #007bff;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #007bff; /* ใช้สีน้ำเงินสำหรับราคา */
+            margin-top: 8px;
+            margin-bottom: 8px;
         }
 
         .action-row {
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            margin-top: 15px;
             display: flex;
             justify-content: flex-end;
-            margin-top: 12px;
         }
-
-        .enroll-btn {
+        
+        .view-detail-btn {
             background-color: #007bff;
             color: #fff;
             border: none;
             border-radius: 6px;
-            padding: 8px 12px;
+            padding: 8px 16px;
             cursor: pointer;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background-color 0.2s;
         }
-        .enroll-btn[disabled] {
-            background-color: #6c757d;
-            cursor: not-allowed;
+        .view-detail-btn:hover {
+            background-color: #0056b3;
         }
+        
     </style>
 </head>
 <body>
 
 <div class="container">
 
-    <!-- ===== HEADER / PROFILE ===== -->
     <div class="header-section">
         <div class="header-left">
-            <h1>Welcome, {{ student_name }}</h1>
+            <h1>Welcome, {{ student_name }}!</h1>
             {% if data.student_profile %}
-                <p>ID: {{ data.student_profile[0] }}</p>
-                <p>Name: {{ data.student_profile[1] }}</p>
+                <p>Student ID: {{ data.student_profile[0] }}</p>
             {% else %}
                 <p style="color:#c00;">(Student profile not found)</p>
             {% endif %}
         </div>
 
-        <div class="header-right">
+        <div class="header-buttons">
+            <a href="{{ url_for('student_profile') }}" class="profile-btn">Profile</a>
             <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
         </div>
     </div>
 
-    <!-- ===== DAY FILTER BAR ===== -->
     <div class="filter-bar">
-        <!-- "All" -->
         <a
             class="filter-chip {% if not current_day or current_day == '' %}active{% endif %}"
             href="{{ url_for('student_dashboard') }}"
@@ -213,129 +249,62 @@
             All
         </a>
 
-        <!-- Monday -->
+        {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] %}
         <a
-            class="filter-chip {% if current_day == 'Monday' %}active{% endif %}"
-            href="{{ url_for('student_dashboard', day='Monday') }}"
+            class="filter-chip {% if current_day == day %}active{% endif %}"
+            href="{{ url_for('student_dashboard', day=day) }}"
         >
-            Monday
+            {{ day }}
         </a>
-
-        <!-- Tuesday -->
-        <a
-            class="filter-chip {% if current_day == 'Tuesday' %}active{% endif %}"
-            href="{{ url_for('student_dashboard', day='Tuesday') }}"
-        >
-            Tuesday
-        </a>
-
-        <!-- Wednesday -->
-        <a
-            class="filter-chip {% if current_day == 'Wednesday' %}active{% endif %}"
-            href="{{ url_for('student_dashboard', day='Wednesday') }}"
-        >
-            Wednesday
-        </a>
-
-        <!-- Thursday -->
-        <a
-            class="filter-chip {% if current_day == 'Thursday' %}active{% endif %}"
-            href="{{ url_for('student_dashboard', day='Thursday') }}"
-        >
-            Thursday
-        </a>
-
-        <!-- Friday -->
-        <a
-            class="filter-chip {% if current_day == 'Friday' %}active{% endif %}"
-            href="{{ url_for('student_dashboard', day='Friday') }}"
-        >
-            Friday
-        </a>
-
-        <!-- Saturday -->
-        <a
-            class="filter-chip {% if current_day == 'Saturday' %}active{% endif %}"
-            href="{{ url_for('student_dashboard', day='Saturday') }}"
-        >
-            Saturday
-        </a>
-
-        <!-- Sunday -->
-        <a
-            class="filter-chip {% if current_day == 'Sunday' %}active{% endif %}"
-            href="{{ url_for('student_dashboard', day='Sunday') }}"
-        >
-            Sunday
-        </a>
+        {% endfor %}
     </div>
 
-    <!-- ===== CLASS CARDS ===== -->
     <div class="card-grid">
 
         {% if data.classes and data.classes|length > 0 %}
             {% for cls in data.classes %}
-                <!-- index mapping:
-                    0 cID
-                    1 cDay
-                    2 cTime
-                    3 studentMax
-                    4 studentNow
-                    5 price
-                    6 tName
-                    7 address
-                    8 iName
-                    9 expYear
-                    10 subjectName
-                    11 imageProfile
-                    12 enrolled (1/0)
-                -->
+                <a href="{{ url_for('student_class_detail', cID=cls[0]) }}" class="class-link">
+                    <div class="class-card">
 
-                <div class="class-card">
+                        <div class="class-header">
+                            <img class="avatar"
+                                    src="{{ cls[11] if cls[11] else 'https://via.placeholder.com/70' }}"
+                                    alt="instructor photo">
 
-                    <div class="class-header">
-                        <img class="avatar"
-                             src="{{ cls[11] if cls[11] else 'https://via.placeholder.com/64' }}"
-                             alt="instructor photo">
+                            <div class="class-main">
+                                <p class="teacher-name">
+                                    {{ cls[8] }}
+                                    {% if cls[12] == 1 %}
+                                        <span class="enrolled-badge">Enrolled</span>
+                                    {% endif %}
+                                </p>
+                                <p class="subject-line">
+                                    {{ cls[10] }} • {{ cls[9] }} yrs exp
+                                </p>
+                                <p class="subject-line">
+                                    {{ cls[6] }}
+                                </p>
+                            </div>
+                        </div>
 
-                        <div class="class-main">
-                            <p class="teacher-name">
-                                {{ cls[8] }}
-                                {% if cls[12] == 1 %}
-                                    <span class="enrolled-badge">Enrolled</span>
-                                {% endif %}
-                            </p>
-                            <p class="subject-line">
-                                {{ cls[10] }} • {{ cls[9] }} yrs exp
-                            </p>
-                            <p class="subject-line">
-                                {{ cls[6] }}
+                        <div class="class-body">
+                            <p><strong>Day/Time:</strong> {{ cls[1] }} | {{ cls[2] }}</p>
+                            <p><strong>Location:</strong> {{ cls[7] }}</p>
+                            
+                            <p class="price-line">Price: ฿{{ "{:,.2f}".format(cls[5]) }}</p>
+
+                            <p>
+                                <strong>Seats left:</strong>
+                                {{ cls[3] - cls[4] }} / {{ cls[3] }}
                             </p>
                         </div>
-                    </div>
 
-                    <div class="class-body">
-                        <div><strong>Day/Time:</strong> {{ cls[1] }} | {{ cls[2] }}</div>
-                        <div><strong>Location:</strong> {{ cls[7] }}</div>
-                        <div class="price-line">Price: ฿{{ cls[5] }}</div>
-
-                        <div>
-                            <strong>Seats left:</strong>
-                            {{ cls[3] - cls[4] }} / {{ cls[3] }}
+                        <div class="action-row">
+                            <button class="view-detail-btn" type="button">View Detail</button>
                         </div>
-                    </div>
 
-                    <div class="action-row">
-                        {% if cls[12] == 1 %}
-                            <button class="enroll-btn" disabled>Already Enrolled</button>
-                        {% elif (cls[3] - cls[4]) <= 0 %}
-                            <button class="enroll-btn" disabled>Full</button>
-                        {% else %}
-                            <button class="enroll-btn">Enroll</button>
-                        {% endif %}
                     </div>
-
-                </div>
+                </a>
             {% endfor %}
         {% else %}
             <p>No classes found for this filter.</p>

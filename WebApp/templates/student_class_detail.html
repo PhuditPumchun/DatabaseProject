@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Class Detail</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            padding: 20px;
+            color: #222;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            padding: 30px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #007bff;
+            font-size: 1.8rem;
+            margin: 0;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+
+        .back-btn {
+            background-color: #6c757d;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 14px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .back-btn:hover {
+            background-color: #5a6268;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 250px;
+            gap: 30px;
+            margin-top: 20px;
+            align-items: flex-start;
+        }
+        
+        /* Left Column: Class Info & Video */
+        .class-info-col {
+            padding-right: 20px;
+        }
+
+        .info-box {
+            background-color: #f1f7fe;
+            border: 1px solid #d0e4ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .info-box h2 {
+            margin-top: 0;
+            color: #0056b3;
+            font-size: 1.2rem;
+        }
+        .info-box p {
+            margin: 5px 0;
+            font-size: 0.95rem;
+        }
+
+        .price-line {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #dc3545;
+            margin-top: 15px;
+        }
+
+        /* Video Section */
+        .video-container {
+            margin-top: 25px;
+        }
+        .video-player {
+            width: 100%;
+            aspect-ratio: 16 / 9; /* For responsive video display */
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        /* Right Column: Instructor Profile */
+        .instructor-profile-col {
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+        .avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #007bff;
+            margin-bottom: 15px;
+        }
+        .teacher-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0 0 5px 0;
+        }
+        .exp-line {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        .center-detail {
+            font-size: 0.85rem;
+            color: #444;
+        }
+        
+        /* Enrollment Button */
+        .action-row {
+            margin-top: 25px;
+        }
+        .enroll-btn {
+            width: 100%;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 12px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .enroll-btn[disabled] {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <div class="header-top">
+            <h1>Class Detail: {{ detail[10] }}</h1>
+            <a href="{{ url_for('student_dashboard') }}" class="back-btn">← Back to Dashboard</a>
+        </div>
+        
+        <!-- detail index mapping (from StudentClassDetailServices.py):
+            0 cID, 1 cDay, 2 cTime, 3 studentMax, 4 studentNow, 
+            5 price, 6 tName, 7 address, 8 iName, 9 expYear, 
+            10 subjectName, 11 imageProfile, 12 videoURL, 13 enrolled 
+        -->
+
+        <div class="detail-grid">
+            
+            <div class="class-info-col">
+                
+                <div class="info-box">
+                    <h2>Schedule & Location</h2>
+                    <p><strong>Subject:</strong> {{ detail[10] }}</p>
+                    <p><strong>Day:</strong> {{ detail[1] }}</p>
+                    <p><strong>Time:</strong> {{ detail[2] }}</p>
+                    <p><strong>Center:</strong> {{ detail[6] }} ({{ detail[7] }})</p>
+                    <p><strong>Capacity:</strong> {{ detail[4] }} / {{ detail[3] }} students</p>
+                    
+                    <p class="price-line">Tuition Fee: ฿{{ detail[5] }}</p>
+                </div>
+
+                <div class="video-container">
+                    <h2>Introduction Video</h2>
+                    {% if detail[12] %}
+                        <!-- Ensuring all necessary YouTube embed attributes are present for full functionality -->
+                        <iframe 
+                            class="video-player"
+                            src="{{ detail[12] }}" 
+                            title="Introduction Video for {{ detail[10] }}" 
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                            referrerpolicy="strict-origin-when-cross-origin" 
+                            allowfullscreen>
+                        </iframe>
+                    {% else %}
+                        <p style="color:#dc3545;">No introduction video available for this class.</p>
+                    {% endif %}
+                </div>
+
+            </div>
+            
+            <div class="instructor-profile-col">
+                <h3>Instructor</h3>
+                <img class="avatar"
+                     src="{{ detail[11] if detail[11] else 'https://via.placeholder.com/100' }}"
+                     alt="Instructor Photo">
+                
+                <p class="teacher-name">{{ detail[8] }}</p>
+                <p class="exp-line">{{ detail[9] }} years of experience</p>
+                
+                <p class="center-detail">Managed at {{ detail[6] }}</p>
+
+                <div class="action-row">
+                    {% if detail[13] == 1 %}
+                        <button class="enroll-btn" disabled>Already Enrolled</button>
+                    {% elif (detail[3] - detail[4]) <= 0 %}
+                        <button class="enroll-btn" disabled>Class Full</button>
+                    {% else %}
+                        <!-- ปุ่ม Enroll จริงจะส่ง POST request ไปยัง Route Enrollment -->
+                        <button class="enroll-btn">Enroll Now (฿{{ detail[5] }})</button>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+</html>
