@@ -1,3 +1,4 @@
+<!-- templates/student_class_detail.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -143,14 +144,72 @@
             font-size: 1rem;
             font-weight: 600;
         }
+        .enroll-btn:hover:not([disabled]) {
+             background-color: #1e7e34;
+        }
         .enroll-btn[disabled] {
             background-color: #6c757d;
             cursor: not-allowed;
         }
+
+        /* Modal Styles (ป็อปอัพ) */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.4); 
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto; /* 15% จากด้านบนและจัดกึ่งกลาง */
+            padding: 25px;
+            border: 1px solid #888;
+            width: 80%; 
+            max-width: 400px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .modal-buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        /* Style for the submit button within the form */
+        #enrollForm button {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        #confirmEnrollBtn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+        }
+        #cancelEnrollBtn {
+            background-color: #f0f0f0;
+            color: #333;
+            border: 1px solid #ccc;
+        }
     </style>
 </head>
 <body>
-
+    
+    <!-- detail index mapping (from StudentClassDetailServices.py):
+        0 cID, 1 cDay, 2 cTime, 3 studentMax, 4 studentNow, 
+        5 price, 6 tName, 7 address, 8 iName, 9 expYear, 
+        10 subjectName, 11 imageProfile, 12 videoURL, 13 enrolled 
+    -->
+    
     <div class="container">
         
         <div class="header-top">
@@ -158,12 +217,6 @@
             <a href="{{ url_for('student_dashboard') }}" class="back-btn">← Back to Dashboard</a>
         </div>
         
-        <!-- detail index mapping (from StudentClassDetailServices.py):
-            0 cID, 1 cDay, 2 cTime, 3 studentMax, 4 studentNow, 
-            5 price, 6 tName, 7 address, 8 iName, 9 expYear, 
-            10 subjectName, 11 imageProfile, 12 videoURL, 13 enrolled 
-        -->
-
         <div class="detail-grid">
             
             <div class="class-info-col">
@@ -176,20 +229,19 @@
                     <p><strong>Center:</strong> {{ detail[6] }} ({{ detail[7] }})</p>
                     <p><strong>Capacity:</strong> {{ detail[4] }} / {{ detail[3] }} students</p>
                     
-                    <p class="price-line">Tuition Fee: ฿{{ detail[5] }}</p>
+                    <p class="price-line">Tuition Fee: ฿{{ "{:,.2f}".format(detail[5]) }}</p>
                 </div>
 
                 <div class="video-container">
                     <h2>Introduction Video</h2>
                     {% if detail[12] %}
-                        <!-- Ensuring all necessary YouTube embed attributes are present for full functionality -->
                         <iframe 
                             class="video-player"
                             src="{{ detail[12] }}" 
-                            title="Introduction Video for {{ detail[10] }}" 
+                            title="Introduction Video for {{ detail[10] }}"
                             frameborder="0" 
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                            referrerpolicy="strict-origin-when-cross-origin" 
+                            referrerpolicy="strict-origin-when-cross-origin"
                             allowfullscreen>
                         </iframe>
                     {% else %}
@@ -202,8 +254,8 @@
             <div class="instructor-profile-col">
                 <h3>Instructor</h3>
                 <img class="avatar"
-                     src="{{ detail[11] if detail[11] else 'https://via.placeholder.com/100' }}"
-                     alt="Instructor Photo">
+                    src="{{ detail[11] if detail[11] else 'https://via.placeholder.com/100' }}"
+                    alt="Instructor Photo">
                 
                 <p class="teacher-name">{{ detail[8] }}</p>
                 <p class="exp-line">{{ detail[9] }} years of experience</p>
@@ -216,8 +268,10 @@
                     {% elif (detail[3] - detail[4]) <= 0 %}
                         <button class="enroll-btn" disabled>Class Full</button>
                     {% else %}
-                        <!-- ปุ่ม Enroll จริงจะส่ง POST request ไปยัง Route Enrollment -->
-                        <button class="enroll-btn">Enroll Now (฿{{ detail[5] }})</button>
+                        <!-- ปุ่มเปิด Modal -->
+                        <button class="enroll-btn" id="openEnrollModal">
+                            Enroll Now (฿{{ "{:,.2f}".format(detail[5]) }})
+                        </button>
                     {% endif %}
                 </div>
             </div>
@@ -226,5 +280,48 @@
 
     </div>
 
+    <!-- Modal Structure (ป็อปอัพยืนยัน) -->
+    <div id="enrollModal" class="modal">
+      <div class="modal-content">
+        <h4>Confirm Enrollment</h4>
+        <p>Are you sure you want to enroll in <strong>{{ detail[10] }}</strong> with Instructor <strong>{{ detail[8] }}</strong>?</p>
+        <p style="color: #dc3545; font-weight: bold;">Fee: ฿{{ "{:,.2f}".format(detail[5]) }}</p>
+        <p>Your enrollment status will be set to 'Pending'.</p>
+        
+        <div class="modal-buttons">
+            <!-- Form สำหรับส่งข้อมูล enrollment -->
+            <form id="enrollForm" method="POST" action="{{ url_for('enroll_class', cID=detail[0]) }}">
+                <!-- Hidden fields ที่จำเป็นสำหรับ Service: feeAmount -->
+                <input type="hidden" name="feeAmount" value="{{ detail[5] }}">
+                <button type="submit" id="confirmEnrollBtn">Yes, Enroll Now</button>
+            </form>
+            <button type="button" id="cancelEnrollBtn">Cancel</button>
+        </div>
+      </div>
+    </div>
+    
+    <script>
+        // Modal Logic
+        const modal = document.getElementById("enrollModal");
+        const openBtn = document.getElementById("openEnrollModal");
+        const cancelBtn = document.getElementById("cancelEnrollBtn");
+
+        if (openBtn) {
+            openBtn.onclick = function() {
+                modal.style.display = "block";
+            }
+        }
+
+        cancelBtn.onclick = function() {
+            modal.style.display = "none";
+        }
+
+        // ปิด Modal เมื่อคลิกนอกกรอบ
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    </script>
 </body>
 </html>

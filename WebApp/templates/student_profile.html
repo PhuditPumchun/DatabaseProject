@@ -1,4 +1,3 @@
-<!-- templates/student_profile.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -97,6 +96,70 @@
         }
         .logout-btn:hover { background-color: #c82333; }
 
+        /* ปุ่ม Confirm Payment */
+        .confirm-btn {
+            background-color: #ffc107;
+            color: #343a40;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .confirm-btn:hover {
+            background-color: #e0a800;
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.4); 
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto; 
+            padding: 25px;
+            border: 1px solid #888;
+            width: 80%; 
+            max-width: 400px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .modal-buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        .modal-buttons button {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        #confirmPaymentSubmitBtn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+        }
+        #cancelPaymentBtn {
+            background-color: #f0f0f0;
+            color: #333;
+            border: 1px solid #ccc;
+        }
+
     </style>
 </head>
 <body>
@@ -164,7 +227,7 @@
                     {% endif %}
                 </div>
 
-                <!-- 2. Payment History -->
+                <!-- 2. Payment History (เพิ่มคอลัมน์และปุ่ม Confirm Payment) -->
                 <div id="payment-history" class="tab-pane">
                     <h2>Full Payment History</h2>
                     {% if payment_history %}
@@ -177,18 +240,35 @@
                                     <th>Center</th>
                                     <th>Fee (฿)</th>
                                     <th>Status</th>
+                                    <th>Confirm Payment</th> <!-- NEW COLUMN -->
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for payment in payment_history %}
-                                <tr style="{% if payment[4] == 'Paid' %} background-color: #d4edda; color: #155724; {% elif payment[4] == 'Pending' %} background-color: #fff3cd; color: #856404; {% else %} background-color: #f8d7da; color: #721c24; {% endif %}">
-                                    <td>{{ payment[5].strftime('%Y-%m-%d') if payment[5] else 'N/A' }}</td>
-                                    <td>{{ payment[0] }}</td>
-                                    <td>{{ payment[1] }}</td>
-                                    <td>{{ payment[2] }}</td>
-                                    <td>{{ "{:,.2f}".format(payment[3]) }}</td>
-                                    <td><strong>{{ payment[4] }}</strong></td>
-                                </tr>
+                                    {% set cID = payment[0] %}
+                                    {% set status = payment[4] %}
+                                    <tr style="{% if status == 'Paid' %} background-color: #d4edda; color: #155724; {% elif status == 'Pending' %} background-color: #fff3cd; color: #856404; {% else %} background-color: #f8d7da; color: #721c24; {% endif %}">
+                                        <td>{{ payment[5].strftime('%Y-%m-%d') if payment[5] else 'N/A' }}</td>
+                                        <td>{{ cID }}</td>
+                                        <td>{{ payment[1] }}</td>
+                                        <td>{{ payment[2] }}</td>
+                                        <td>{{ "{:,.2f}".format(payment[3]) }}</td>
+                                        <td><strong>{{ status }}</strong></td>
+                                        <td>
+                                            {% if status == 'Pending' %}
+                                                <button 
+                                                    class="confirm-btn" 
+                                                    data-cid="{{ cID }}"
+                                                    data-classname="{{ payment[1] }}" 
+                                                    data-fee="{{ "{:,.2f}".format(payment[3]) }}"
+                                                    onclick="openPaymentModal({{ cID }}, '{{ payment[1] }}', '{{ "{:,.2f}".format(payment[3]) }}')">
+                                                    I Have Paid
+                                                </button>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                    </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -201,10 +281,35 @@
         </div>
 
     </div>
+
+    <!-- Payment Confirmation Modal (ป็อปอัพยืนยันการชำระเงิน) -->
+    <div id="paymentModal" class="modal">
+      <div class="modal-content">
+        <h4>Confirm Payment Sent</h4>
+        <p>Are you sure you have already paid for the class <strong id="modalClassName"></strong>?</p>
+        <p style="color: #28a745; font-weight: bold;">Fee: ฿<span id="modalFeeAmount"></span></p>
+        <p>This confirmation will update your enrollment status to 'Paid' and count you in the class.</p>
+        
+        <div class="modal-buttons">
+            <!-- Form สำหรับส่งข้อมูลการยืนยันไปยัง Route ใหม่ -->
+            <form id="paymentForm" method="POST" action="">
+                <button type="submit" id="confirmPaymentSubmitBtn">Yes, Confirm Payment</button>
+            </form>
+            <button type="button" id="cancelPaymentBtn">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const tabs = document.querySelectorAll('.tab-link');
             const panes = document.querySelectorAll('.tab-pane');
+            const paymentModal = document.getElementById("paymentModal");
+            const cancelPaymentBtn = document.getElementById("cancelPaymentBtn");
+            const paymentForm = document.getElementById("paymentForm");
+            const modalClassName = document.getElementById("modalClassName");
+            const modalFeeAmount = document.getElementById("modalFeeAmount");
 
             function switchTab(targetTab) {
                 // Remove active from all tabs and panes
@@ -224,13 +329,42 @@
                 }
             }
 
+            // Tab Switching Logic
             tabs.forEach(tab => {
                 tab.addEventListener('click', function(e) {
                     e.preventDefault();
                     const targetTab = this.getAttribute('data-tab');
                     switchTab(targetTab);
+                    // Update URL hash without causing a page reload
+                    window.location.hash = targetTab; 
                 });
             });
+
+            // Function to open the modal
+            window.openPaymentModal = function(cID, className, feeAmount) {
+                // Update modal content
+                modalClassName.textContent = className;
+                modalFeeAmount.textContent = feeAmount;
+                
+                // Update form action URL dynamically
+                // action should point to /student/profile/confirm_payment/<cID>
+                paymentForm.action = `{{ url_for('confirm_payment', cID=0) }}`.replace('/0', '/' + cID);
+                
+                // Show modal
+                paymentModal.style.display = "block";
+            };
+
+            // Modal Closing Logic
+            cancelPaymentBtn.onclick = function() {
+                paymentModal.style.display = "none";
+            }
+
+            // ปิด Modal เมื่อคลิกนอกกรอบ
+            window.onclick = function(event) {
+                if (event.target == paymentModal) {
+                    paymentModal.style.display = "none";
+                }
+            }
 
             // Initial check for hash to load correct tab
             // Loads 'general-info' by default

@@ -5,6 +5,8 @@ from StudentDashboardServices import StudentDashboardServices
 from RegistrationServices import RegistrationServices  # [ADDED]
 from InstructorEditDashboardServices import InstructorEditDashboardServices
 from StudentClassDetailServices import StudentClassDetailServices
+from StudentEnrollmentServices import StudentEnrollmentServices
+from StudentPaymentServices import StudentPaymentServices
 from StudentProfileServices import StudentProfileServices
 
 app = Flask(__name__)
@@ -177,6 +179,44 @@ def student_class_detail(cID):
             detail=class_detail
         )
     return f"Class ID {cID} not found or data error.", 404
+
+
+@app.route('/student/enroll/<int:cID>', methods=['POST'])
+def enroll_class(cID):
+    sID = session.get('sID')
+    if not sID: return redirect(url_for('login_page'))
+
+    # ต้องดึง feeAmount จาก form ที่ส่งมา
+    feeAmount = request.form.get('feeAmount', type=float)
+
+    if feeAmount is None:
+        print("Enrollment failed: feeAmount missing in form data.")
+        return redirect(url_for('student_class_detail', cID=cID))
+
+
+    success = StudentEnrollmentServices.enroll_student(sID, cID, feeAmount)
+
+    if success:
+        # Redirect ไปหน้า Payment History ใน Student Profile
+        return redirect(url_for('student_profile') + '#payment-history')
+    else:
+        print("Enrollment failed: Database error.")
+        return redirect(url_for('student_class_detail', cID=cID))
+    
+@app.route('/student/profile/confirm_payment/<int:cID>', methods=['POST'])
+def confirm_payment(cID):
+    sID = session.get('sID')
+    if not sID: return redirect(url_for('login_page'))
+        
+    success = StudentPaymentServices.confirm_payment(sID, cID)
+    
+    if success:
+        # Redirect กลับไปหน้า Payment History
+        return redirect(url_for('student_profile') + '#payment-history')
+    else:
+        print(f"Payment confirmation failed for sID={sID}, cID={cID}")
+        # สามารถเพิ่ม flash message แจ้งเตือนความล้มเหลวได้
+        return redirect(url_for('student_profile') + '#payment-history')
 
 @app.route('/student/profile', methods=['GET'])
 def student_profile():
