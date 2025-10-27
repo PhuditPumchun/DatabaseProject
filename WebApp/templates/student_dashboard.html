@@ -12,7 +12,7 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1280px;
             margin: auto;
             background-color: #ffffff;
             border-radius: 12px;
@@ -56,7 +56,7 @@
             background-color: #c82333;
         }
 
-        /* filter row (ยังไม่ต้องทำงานจริง แค่โชว์ UI) */
+        /* FILTER BAR */
         .filter-bar {
             display: flex;
             flex-wrap: wrap;
@@ -65,23 +65,29 @@
             margin-bottom: 24px;
             font-size: 0.85rem;
         }
+
         .filter-chip {
+            display: inline-block;
             background: #f0f0f0;
             padding: 6px 10px;
             border-radius: 16px;
             cursor: pointer;
             border: 1px solid #d9d9d9;
+            color: #333;
+            text-decoration: none;
+            line-height: 1.2;
         }
         .filter-chip.active {
             background: #007bff;
-            color: white;
+            color: #fff;
             border-color: #007bff;
+            font-weight: 600;
         }
 
-        /* card grid */
+        /* CARD GRID */
         .card-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill,minmax(270px,1fr));
+            grid-template-columns: repeat(auto-fill,minmax(360px,1fr));
             gap: 20px;
         }
 
@@ -89,7 +95,7 @@
             background: #fff;
             border-radius: 10px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.07);
-            padding: 16px;
+            padding: 16px 20px;
             border: 1px solid #eee;
             display: flex;
             flex-direction: column;
@@ -129,7 +135,7 @@
 
         .enrolled-badge {
             background-color: #28a745;
-            color: white;
+            color: #fff;
             font-size: 0.7rem;
             font-weight: 600;
             padding: 3px 6px;
@@ -180,7 +186,7 @@
 
 <div class="container">
 
-    <!-- ===== Header / Profile ===== -->
+    <!-- ===== HEADER / PROFILE ===== -->
     <div class="header-section">
         <div class="header-left">
             <h1>Welcome, {{ student_name }}</h1>
@@ -188,7 +194,7 @@
                 <p>ID: {{ data.student_profile[0] }}</p>
                 <p>Name: {{ data.student_profile[1] }}</p>
             {% else %}
-                <p style="color:#c00;">(ไม่พบข้อมูลนักเรียน)</p>
+                <p style="color:#c00;">(Student profile not found)</p>
             {% endif %}
         </div>
 
@@ -197,24 +203,79 @@
         </div>
     </div>
 
-    <!-- ===== Filter Chips (UI อย่างเดียว) ===== -->
+    <!-- ===== DAY FILTER BAR ===== -->
     <div class="filter-bar">
-        <div class="filter-chip active">ทั้งหมด</div>
-        <div class="filter-chip">Monday</div>
-        <div class="filter-chip">Tuesday</div>
-        <div class="filter-chip">Wednesday</div>
-        <div class="filter-chip">Thursday</div>
-        <div class="filter-chip">Friday</div>
-        <div class="filter-chip">Saturday</div>
-        <div class="filter-chip">Sunday</div>
+        <!-- "All" -->
+        <a
+            class="filter-chip {% if not current_day or current_day == '' %}active{% endif %}"
+            href="{{ url_for('student_dashboard') }}"
+        >
+            All
+        </a>
+
+        <!-- Monday -->
+        <a
+            class="filter-chip {% if current_day == 'Monday' %}active{% endif %}"
+            href="{{ url_for('student_dashboard', day='Monday') }}"
+        >
+            Monday
+        </a>
+
+        <!-- Tuesday -->
+        <a
+            class="filter-chip {% if current_day == 'Tuesday' %}active{% endif %}"
+            href="{{ url_for('student_dashboard', day='Tuesday') }}"
+        >
+            Tuesday
+        </a>
+
+        <!-- Wednesday -->
+        <a
+            class="filter-chip {% if current_day == 'Wednesday' %}active{% endif %}"
+            href="{{ url_for('student_dashboard', day='Wednesday') }}"
+        >
+            Wednesday
+        </a>
+
+        <!-- Thursday -->
+        <a
+            class="filter-chip {% if current_day == 'Thursday' %}active{% endif %}"
+            href="{{ url_for('student_dashboard', day='Thursday') }}"
+        >
+            Thursday
+        </a>
+
+        <!-- Friday -->
+        <a
+            class="filter-chip {% if current_day == 'Friday' %}active{% endif %}"
+            href="{{ url_for('student_dashboard', day='Friday') }}"
+        >
+            Friday
+        </a>
+
+        <!-- Saturday -->
+        <a
+            class="filter-chip {% if current_day == 'Saturday' %}active{% endif %}"
+            href="{{ url_for('student_dashboard', day='Saturday') }}"
+        >
+            Saturday
+        </a>
+
+        <!-- Sunday -->
+        <a
+            class="filter-chip {% if current_day == 'Sunday' %}active{% endif %}"
+            href="{{ url_for('student_dashboard', day='Sunday') }}"
+        >
+            Sunday
+        </a>
     </div>
 
-    <!-- ===== Class Cards ===== -->
+    <!-- ===== CLASS CARDS ===== -->
     <div class="card-grid">
 
         {% if data.classes and data.classes|length > 0 %}
             {% for cls in data.classes %}
-                <!-- mapping index:
+                <!-- index mapping:
                     0 cID
                     1 cDay
                     2 cTime
@@ -270,7 +331,6 @@
                         {% elif (cls[3] - cls[4]) <= 0 %}
                             <button class="enroll-btn" disabled>Full</button>
                         {% else %}
-                            <!-- ปุ่มนี้ยังไม่ผูก backend สมัครเรียนจริง เป็น placeholder -->
                             <button class="enroll-btn">Enroll</button>
                         {% endif %}
                     </div>
@@ -278,7 +338,7 @@
                 </div>
             {% endfor %}
         {% else %}
-            <p>ไม่มีคลาสที่เปิดอยู่ในระบบตอนนี้</p>
+            <p>No classes found for this filter.</p>
         {% endif %}
 
     </div>

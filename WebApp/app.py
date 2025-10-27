@@ -1,8 +1,8 @@
-# app.py (อัปเดต)
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session, Flask
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from LoginServices import LoginServices
 from InstructorDashboardServices import InstructorDashboardServices
-from StudentDashboardServices import StudentDashboardServices  # [ADDED]
+from StudentDashboardServices import StudentDashboardServices
+from RegistrationServices import RegistrationServices  # [ADDED]
 from InstructorEditDashboardServices import InstructorEditDashboardServices
 
 app = Flask(__name__)
@@ -12,8 +12,13 @@ app.config['SECRET_KEY'] = 'your_super_secret_key_here'
 @app.route('/', methods=['GET'])
 @app.route('/login', methods=['GET'])
 def login_page():
+    # แสดงฟอร์มล็อคอิน (login.html)
+    # ใน login.html เราจะใส่ลิงก์ไป /register เพิ่ม
     return render_template('login.html')
 
+# --------------------------
+# Login API (AJAX/JS) - ถ้ามีเรียกใช้
+# --------------------------
 @app.route('/api/login', methods=['POST'])
 def api_login():
     data = request.get_json() if request.get_json() else request.form
@@ -24,6 +29,9 @@ def api_login():
     response, status_code = LoginServices.authenticate(username, password, role)
     return jsonify(response), status_code
 
+# --------------------------
+# Login Form handler (POST)
+# --------------------------
 @app.route('/login', methods=['POST'])
 def handle_login_form():
     username = request.form.get('username')
@@ -34,34 +42,27 @@ def handle_login_form():
 
     if response.get('success'):
         if role == 'instructor':
-            # เก็บ iID/iName ไว้ใน Session สำหรับ Instructor Dashboard
             session['iID'] = response.get('iID')
             session['iName'] = response.get('iName')
-            
-            # ไปหน้า instructor dashboard
             return redirect(url_for('instructor_dashboard'))
 
-        elif role == 'student':   # [ADDED]
-            # เก็บ sID/sName ไว้ใน Session สำหรับ Student Dashboard
+        elif role == 'student':
             session['sID'] = response.get('sID')
             session['sName'] = response.get('sName')
-
-            # ไปหน้า student dashboard
             return redirect(url_for('student_dashboard'))
 
         else:
-            # fallback: ถ้ามี redirect_url อื่น
-            redirect_url = response.get('redirect_url')
+            # fallback เผื่อ role แปลก (ไม่น่ามี)
+            redirect_url = response.get('redirect_url', url_for('login_page'))
             return redirect(redirect_url)
-
     else:
-        # ล็อกอินล้มเหลว: กลับ login (จริงๆ ควร flash error)
+        # ล็อกอินไม่ผ่าน -> กลับหน้า login
+        # (ถ้าอยากแสดง error message สวย ๆ ให้ใช้ flash แล้วโชว์ใน template)
         return redirect(url_for('login_page'))
 
-
-# ----------------------------------------------------
-# Instructor Dashboard (เหมือนเดิม)
-# ----------------------------------------------------
+# --------------------------
+# Instructor Dashboard (GET)
+# --------------------------
 @app.route('/instructor/dashboard', methods=['GET'])
 def instructor_dashboard():
     iID = session.get('iID')
@@ -70,12 +71,11 @@ def instructor_dashboard():
     if not iID:
         return redirect(url_for('login_page'))
 
-    # ดึงข้อมูลทั้งหมดจาก Service เดิม
     dashboard_data = InstructorDashboardServices.get_dashboard_data(iID)
 
     if dashboard_data:
         return render_template(
-            'instructor_dashboard.html', 
+            'instructor_dashboard.html',
             instructor_name=iName,
             data=dashboard_data
         )
@@ -128,43 +128,92 @@ def update_instructor():
 
     return redirect(url_for('instructor_dashboard'))
 
-# ----------------------------------------------------
-# [ADDED] Student Dashboard ใหม่
-# ----------------------------------------------------
+# --------------------------
+# Student Dashboard (GET)
+# --------------------------
 @app.route('/student/dashboard', methods=['GET'])
 def student_dashboard():
+    # session info
     sID = session.get('sID')
     sName = session.get('sName', 'Student')
 
     if not sID:
         return redirect(url_for('login_page'))
 
-    # ดึงข้อมูลหน้า dashboard ของนักเรียน
-    dashboard_data = StudentDashboardServices.get_dashboard_data(sID)
+    # NEW: read optional filter
+    current_day = request.args.get('day', default="", type=str)
+
+    dashboard_data = StudentDashboardServices.get_dashboard_data(
+        sID,
+        filter_day=current_day
+    )
 
     if dashboard_data:
         return render_template(
             'student_dashboard.html',
             student_name=sName,
-            data=dashboard_data
+            data=dashboard_data,
+            current_day=current_day  # <- pass to template
         )
     else:
         return "Error loading student dashboard data.", 500
 
-# ----------------------------------------------------
-# Logout (แก้เล็กน้อย ให้เคลียร์ของ student ด้วย)
-# ----------------------------------------------------
+# =================================================================
+# [ADDED] Register routes
+# =================================================================
+
+@app.route('/register', methods=['GET'])
+def register_select_role():
+    """
+    หน้าเลือก role: Student / Instructor
+    """
+    return render_template('register.html')
+
+@app.route('/register/student', methods=['GET', 'POST'])
+def register_student():
+    """
+    GET  -> แสดงฟอร์มสมัครนักเรียน
+    POST -> รับข้อมูลจากฟอร์มและสมัคร
+    """
+    if request.method == 'GET':
+        return render_template('register_student.html')
+
+    # ถ้าเป็น POST
+    name = request.form.get('name')
+    username = request.form.get('username')
+    password = request.form.get('password')
+
+    result = RegistrationServices.register_student(name, username, password)
+
+    if result.get('success'):
+        # สมัครเสร็จ -> กลับหน้า login ให้ลองล็อคอินได้เลย
+        return redirect(url_for('login_page'))
+    else:
+        # สมัครไม่ผ่าน เช่น username ซ้ำ
+        # ตรงนี้เราง่าย ๆ: render หน้าเดิมแล้วโชว์ error
+        # (ถ้าอยากสวย ใช้ flash แล้วแสดงใน template)
+        return render_template(
+            'register_student.html',
+            error_msg=result.get('message', 'Registration failed.')
+        )
+
+@app.route('/register/instructor', methods=['GET'])
+def register_instructor_placeholder():
+    """
+    หน้านี้ยังไม่ทำจริง แต่สร้าง route ไว้ไม่ให้ 404
+    """
+    return render_template('register_instructor.html')
+
+# --------------------------
+# Logout
+# --------------------------
 @app.route('/logout')
 def logout():
-    """ล้างข้อมูล session และ Redirect ไปยังหน้า Login"""
-    
-    # ลบตัวแปร instructor/student ออกจาก session
-    session.pop('iID', None) 
-    session.pop('iName', None) 
-    session.pop('sID', None)      # [ADDED]
-    session.pop('sName', None)    # [ADDED]
-    
-    # กลับหน้า login
+    # เคลียร์ session ทั้ง instructor / student
+    session.pop('iID', None)
+    session.pop('iName', None)
+    session.pop('sID', None)
+    session.pop('sName', None)
     return redirect(url_for('login_page'))
 
 if __name__ == '__main__':
