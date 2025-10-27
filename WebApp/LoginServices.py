@@ -1,6 +1,3 @@
-# LoginServices.py (แก้ไข: ลบเมธอด get_instructor_dashboard_data ออก)
-
-# ... (import ต่างๆ เหมือนเดิม) ...
 import os
 from dotenv import load_dotenv
 import psycopg2

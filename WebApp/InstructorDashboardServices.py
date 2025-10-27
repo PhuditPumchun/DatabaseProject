@@ -35,19 +35,20 @@ class InstructorDashboardServices:
         try:
             cursor = conn.cursor()
             
-            # 1. ข้อมูลพื้นฐานของ Instructor
+            # 1. ข้อมูลพื้นฐานของ Instructor (เพิ่ม i.iUsername)
             cursor.execute("""
                 SELECT 
-                    i.iName, s.sName AS SubjectName, i.expYear, im.imageProfile, im.rewardURL
+                    i.iName, s.sName AS SubjectName, i.expYear, im.imageProfile, im.rewardURL, 
+                    im.mediaID, im.videoURL, i.iUsername 
                 FROM Instructor i
                 LEFT JOIN Subject s ON i.sID = s.sID
                 LEFT JOIN InstructorMedia im ON i.iID = im.iID
                 WHERE i.iID = %s;
             """, (iID,))
-            # NOTE: iName ถูกส่งมาใน session ด้วย แต่ถูกดึงมาซ้ำที่นี่เพื่อความสมบูรณ์
+            # data['profile'] จะมี 8 คอลัมน์ (ดัชนี 0-7)
             data['profile'] = cursor.fetchone() 
             
-            # 2. ข้อมูลศูนย์ที่ดูแล (เพิ่ม t.tID สำหรับหน้า Edit)
+            # 2. ข้อมูลศูนย์ที่ดูแล
             cursor.execute("""
                 SELECT t.tName, t.address, t.tID
                 FROM TutoringCenter t
