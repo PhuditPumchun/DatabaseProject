@@ -1,286 +1,219 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>{{ student_name }}'s Profile</title>
-    <style>
-        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f8f9fa; }
-        .container { max-width: 1200px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
-        h1 { color: #007bff; margin-top: 0; }
+  <meta charset="UTF-8">
+  <title>{{ student_name }}'s Profile</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background-color: #f8f9fa; }
+    .container { max-width: 1200px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    h1 { color: #007bff; margin-top: 0; }
+    .profile-layout { display: flex; gap: 20px; margin-top: 20px; }
 
-        /* Layout หลัก: Tabs ด้านซ้าย, Content ด้านขวา */
-        .profile-layout {
-            display: flex;
-            gap: 20px;
-            margin-top: 20px;
-        }
+    .tab-bar { flex-shrink: 0; width: 220px; background-color: #e9ecef; border-radius: 6px; padding: 10px 0; height: fit-content; }
+    .tab-bar a { display: block; padding: 15px; text-decoration: none; color: #495057; font-weight: bold; border-bottom: 1px solid #dee2e6; transition: background-color .2s; }
+    .tab-bar a:last-child { border-bottom: none; }
+    .tab-bar a:hover { background-color: #dee2e6; }
+    .tab-bar a.active { background-color: #007bff; color: white; border-left: 5px solid #0056b3; }
 
-        /* Tab Bar ด้านซ้าย */
-        .tab-bar {
-            flex-shrink: 0;
-            width: 200px;
-            background-color: #e9ecef;
-            border-radius: 6px;
-            padding: 10px 0;
-            height: fit-content;
-        }
-        .tab-bar a {
-            display: block;
-            padding: 15px 15px;
-            text-decoration: none;
-            color: #495057;
-            font-weight: bold;
-            border-bottom: 1px solid #dee2e6;
-            transition: background-color 0.2s;
-        }
-        .tab-bar a:last-child {
-            border-bottom: none;
-        }
-        .tab-bar a:hover {
-            background-color: #dee2e6;
-        }
-        .tab-bar a.active {
-            background-color: #007bff;
-            color: white;
-            border-left: 5px solid #0056b3;
-        }
+    .tab-content { flex-grow: 1; padding: 20px; border: 1px solid #dee2e6; border-radius: 6px; background-color: #ffffff; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
 
-        /* Content Pane ด้านขวา */
-        .tab-content {
-            flex-grow: 1;
-            padding: 20px;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            background-color: #ffffff;
-        }
-        .tab-pane {
-            display: none; /* ซ่อน Tab Content ที่ไม่ได้ใช้งาน */
-        }
-        .tab-pane.active {
-            display: block;
-        }
-        
-        /* สไตล์สำหรับตาราง */
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; font-size: 0.9em; }
-        th { background-color: #f0f0f0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; font-size: .9em; }
+    th { background-color: #f0f0f0; }
 
-        /* ข้อมูล Profile */
-        .profile-details p { margin: 5px 0; font-size: 1.1em; }
-        .profile-details strong { color: #007bff; }
-        
-        /* ปุ่ม Back/Logout */
-        .header-section { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 20px; 
-        }
-        .header-buttons { display: flex; gap: 10px; }
-        .back-btn, .logout-btn { 
-            padding: 8px 15px; 
-            border: none; 
-            border-radius: 4px; 
-            text-decoration: none; 
-            font-size: 0.9em;
-            cursor: pointer;
-        }
-        .back-btn { 
-            background-color: #6c757d; 
-            color: white; 
-        }
-        .back-btn:hover { background-color: #5a6268; }
-        .logout-btn { 
-            background-color: #dc3545; 
-            color: white; 
-        }
-        .logout-btn:hover { background-color: #c82333; }
+    .profile-details p { margin: 5px 0; font-size: 1.1em; }
+    .profile-details strong { color: #007bff; }
 
-        /* ปุ่ม Confirm Payment */
-        .confirm-btn {
-            background-color: #ffc107;
-            color: #343a40;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 0.85em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        .confirm-btn:hover {
-            background-color: #e0a800;
-        }
-        
-        /* Modal Styles */
-        .modal {
-            display: none; 
-            position: fixed; 
-            z-index: 1000; 
-            left: 0;
-            top: 0;
-            width: 100%; 
-            height: 100%; 
-            overflow: auto; 
-            background-color: rgba(0,0,0,0.4); 
-        }
+    .header-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .header-buttons { display: flex; gap: 10px; }
+    .back-btn, .logout-btn { padding: 8px 15px; border: none; border-radius: 4px; text-decoration: none; font-size: .9em; cursor: pointer; }
+    .back-btn { background-color: #6c757d; color: white; }
+    .back-btn:hover { background-color: #5a6268; }
+    .logout-btn { background-color: #dc3545; color: white; }
+    .logout-btn:hover { background-color: #c82333; }
 
-        .modal-content {
-            background-color: #fefefe;
-            margin: 15% auto; 
-            padding: 25px;
-            border: 1px solid #888;
-            width: 80%; 
-            max-width: 400px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            text-align: center;
-        }
+    /* form */
+    .form-group { margin-bottom: 14px; }
+    .form-label { display:block; margin-bottom:6px; font-weight:600; }
+    .form-control { width:100%; padding:10px 12px; border:1px solid #ced4da; border-radius:6px; }
+    .btn-row { display:flex; gap:10px; }
+    .btn { padding:10px 14px; border:none; border-radius:6px; cursor:pointer; text-decoration:none; display:inline-block; }
+    .btn-secondary { background:#6c757d; color:#fff; }
+    .btn-secondary:hover { background:#5a6268; }
+    .btn-success { background:#28a745; color:#fff; }
+    .btn-success:hover { background:#218838; }
 
-        .modal-buttons {
-            margin-top: 20px;
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-        }
-        .modal-buttons button {
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        #confirmPaymentSubmitBtn {
-            background-color: #28a745;
-            color: white;
-            border: none;
-        }
-        #cancelPaymentBtn {
-            background-color: #f0f0f0;
-            color: #333;
-            border: 1px solid #ccc;
-        }
+    /* ปุ่ม Confirm Payment */
+    .confirm-btn {
+        background-color: #ffc107;
+        color: #343a40;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 0.85em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    .confirm-btn:hover { background-color: #e0a800; }
+    
+    /* Modal Styles */
+    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
+    .modal-content { background-color: #fefefe; margin: 15% auto; padding: 25px; border: 1px solid #888; width: 80%; max-width: 400px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: center; }
+    .modal-buttons { margin-top: 20px; display: flex; justify-content: center; gap: 15px; }
+    .modal-buttons button { padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    #confirmPaymentSubmitBtn { background-color: #28a745; color: white; border: none; }
+    #cancelPaymentBtn { background-color: #f0f0f0; color: #333; border: 1px solid #ccc; }
 
-    </style>
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header-section">
-            <h1>Student Profile: {{ student_name }}</h1>
-            <div class="header-buttons">
-                <a href="{{ url_for('student_dashboard') }}" class="back-btn">Back to Dashboard</a>
-                <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
-            </div>
-        </div>
-
-        <div class="profile-layout">
-            <!-- Tab Bar (แถบซ้าย) -->
-            <div class="tab-bar">
-                <a href="#general-info" class="tab-link active" data-tab="general-info">
-                    General Info & Classes
-                </a>
-                <a href="#payment-history" class="tab-link" data-tab="payment-history">
-                    Payment History
-                </a>
-            </div>
-
-            <!-- Tab Content (เนื้อหาขวา) -->
-            <div class="tab-content">
-                
-                <!-- 1. General Info & Enrolled Classes -->
-                <div id="general-info" class="tab-pane active">
-                    <h2>Account Information</h2>
-                    <div class="profile-details">
-                        <!-- profile[1] คือ sName, profile[2] คือ sUsername, profile[0] คือ sID -->
-                        <p><strong>Name:</strong> {{ profile[1] }}</p>
-                        <p><strong>Username:</strong> {{ profile[2] }}</p>
-                        <p><strong>Student ID:</strong> {{ profile[0] }}</p>
-                    </div>
-
-                    <h2 style="margin-top: 30px;">Successfully Enrolled Classes (Paid)</h2>
-                    {% if enrolled_classes %}
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Date Enrolled</th>
-                                    <th>Day/Time</th>
-                                    <th>Subject</th>
-                                    <th>Instructor</th>
-                                    <th>Center</th>
-                                    <th>Price (฿)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for class in enrolled_classes %}
-                                <tr>
-                                    <td>{{ class[0].strftime('%Y-%m-%d') if class[0] else 'N/A' }}</td>
-                                    <td>{{ class[1] }} / {{ class[2] }}</td>
-                                    <td>{{ class[5] }}</td>
-                                    <td>{{ class[4] }}</td>
-                                    <td>{{ class[3] }}</td>
-                                    <td>{{ "{:,.2f}".format(class[6]) }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    {% else %}
-                        <p>You have not successfully enrolled in any classes yet.</p>
-                    {% endif %}
-                </div>
-
-                <!-- 2. Payment History (เพิ่มคอลัมน์และปุ่ม Confirm Payment) -->
-                <div id="payment-history" class="tab-pane">
-                    <h2>Full Payment History</h2>
-                    {% if payment_history %}
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Enroll Date</th>
-                                    <th>Class ID</th>
-                                    <th>Instructor</th>
-                                    <th>Center</th>
-                                    <th>Fee (฿)</th>
-                                    <th>Status</th>
-                                    <th>Confirm Payment</th> <!-- NEW COLUMN -->
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for payment in payment_history %}
-                                    {% set cID = payment[0] %}
-                                    {% set status = payment[4] %}
-                                    <tr style="{% if status == 'Paid' %} background-color: #d4edda; color: #155724; {% elif status == 'Pending' %} background-color: #fff3cd; color: #856404; {% else %} background-color: #f8d7da; color: #721c24; {% endif %}">
-                                        <td>{{ payment[5].strftime('%Y-%m-%d') if payment[5] else 'N/A' }}</td>
-                                        <td>{{ cID }}</td>
-                                        <td>{{ payment[1] }}</td>
-                                        <td>{{ payment[2] }}</td>
-                                        <td>{{ "{:,.2f}".format(payment[3]) }}</td>
-                                        <td><strong>{{ status }}</strong></td>
-                                        <td>
-                                            {% if status == 'Pending' %}
-                                                <button 
-                                                    class="confirm-btn" 
-                                                    data-cid="{{ cID }}"
-                                                    data-classname="{{ payment[1] }}" 
-                                                    data-fee="{{ "{:,.2f}".format(payment[3]) }}"
-                                                    onclick="openPaymentModal({{ cID }}, '{{ payment[1] }}', '{{ "{:,.2f}".format(payment[3]) }}')">
-                                                    I Have Paid
-                                                </button>
-                                            {% else %}
-                                                -
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    {% else %}
-                        <p>No payment history records found.</p>
-                    {% endif %}
-                </div>
-
-            </div>
-        </div>
-
+  <div class="container">
+    <div class="header-section">
+      <h1>Student Profile: {{ student_name }}</h1>
+      <div class="header-buttons">
+        <a href="{{ url_for('student_dashboard') }}" class="back-btn">Back to Dashboard</a>
+        <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+      </div>
     </div>
+
+    <div class="profile-layout">
+      <!-- Tab Bar -->
+      <div class="tab-bar">
+        <a href="#account-settings" class="tab-link active" data-tab="account-settings">Account Information</a>
+        <!-- NEW TEXT/DATA-TAB -->
+        <a href="#enrolled-class" class="tab-link" data-tab="enrolled-class">Enrolled Class</a>
+        <a href="#payment-history" class="tab-link" data-tab="payment-history">Payment History</a>
+      </div>
+
+      <!-- Tab Content -->
+      <div class="tab-content">
+
+        <!-- 1. Account Settings (Combined View/Edit) -->
+        <div id="account-settings" class="tab-pane active">
+          <h2>Account Information</h2>
+
+          <!-- View mode -->
+          <div id="account-view">
+            <div class="profile-details" style="margin-bottom:16px;">
+              <p><strong>Name:</strong> {{ profile.sName }}</p>
+              <p><strong>Username:</strong> {{ profile.sUsername }}</p>
+              <p><strong>Student ID:</strong> {{ profile.sID }}</p>
+            </div>
+            <button id="btn-edit-account" class="btn btn-success">Edit</button>
+          </div>
+
+          <!-- Edit mode -->
+          <div id="account-edit" style="display:none">
+            <form id="account-form" action="{{ url_for('student_update_account') }}" method="post">
+              <div class="form-group">
+                <label class="form-label">Name:</label>
+                <input type="text" name="sName" class="form-control" value="{{ profile.sName }}" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Username:</label>
+                <input type="text" name="sUsername" class="form-control" value="{{ profile.sUsername }}" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Password:</label>
+                <input type="password" name="sPassword" class="form-control" placeholder="Enter new password (optional)">
+              </div>
+              <div class="btn-row">
+                <button type="button" id="btn-cancel-edit" class="btn btn-secondary">Cancel</button>
+                <button type="submit" class="btn btn-success">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- 2. Enrolled Class (เปลี่ยนชื่อจาก general-info) -->
+        <div id="enrolled-class" class="tab-pane">
+          <h2 style="margin-top: 0;">Successfully Enrolled Classes (Paid)</h2>
+
+          {% if enrolled_classes %}
+          <table>
+            <thead>
+              <tr>
+                <th>Date Enrolled</th>
+                <th>Day/Time</th>
+                <th>Subject</th>
+                <th>Instructor</th>
+                <th>Center</th>
+                <th>Price (฿)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for class in enrolled_classes %}
+              <tr>
+                <td>{{ class[0].strftime('%Y-%m-%d') if class[0] else 'N/A' }}</td>
+                <td>{{ class[1] }} / {{ class[2] }}</td>
+                <td>{{ class[5] }}</td>
+                <td>{{ class[4] }}</td>
+                <td>{{ class[3] }}</td>
+                <td>{{ "{:,.2f}".format(class[6]) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p>You have not successfully enrolled in any classes yet.</p>
+          {% endif %}
+        </div>
+
+        <!-- 3. Payment History (พร้อมปุ่มยืนยันการจ่ายเงิน) -->
+        <div id="payment-history" class="tab-pane">
+          <h2>Full Payment History</h2>
+          {% if payment_history %}
+          <table>
+            <thead>
+              <tr>
+                <th>Enroll Date</th>
+                <th>Class ID</th>
+                <th>Instructor</th>
+                <th>Center</th>
+                <th>Fee (฿)</th>
+                <th>Status</th>
+                <th>Confirm Payment</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for payment in payment_history %}
+                {% set cID = payment[0] %}
+                {% set status = payment[4] %}
+                <tr style="{% if status == 'Paid' %} background-color: #d4edda; color: #155724; {% elif status == 'Pending' %} background-color: #fff3cd; color: #856404; {% else %} background-color: #f8d7da; color: #721c24; {% endif %}">
+                  <td>{{ payment[5].strftime('%Y-%m-%d') if payment[5] else 'N/A' }}</td>
+                  <td>{{ cID }}</td>
+                  <td>{{ payment[1] }}</td>
+                  <td>{{ payment[2] }}</td>
+                  <td>{{ "{:,.2f}".format(payment[3]) }}</td>
+                  <td><strong>{{ status }}</strong></td>
+                  <td>
+                      {% if status == 'Pending' %}
+                          <button 
+                              class="confirm-btn" 
+                              data-cid="{{ cID }}"
+                              data-fee="{{ "{:,.2f}".format(payment[3]) }}"
+                              onclick="openPaymentModal({{ cID }}, '{{ payment[1] }}', '{{ "{:,.2f}".format(payment[3]) }}')">
+                              I Have Paid
+                          </button>
+                      {% else %}
+                          -
+                      {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p>No payment history records found.</p>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+  </div>
 
     <!-- Payment Confirmation Modal (ป็อปอัพยืนยันการชำระเงิน) -->
     <div id="paymentModal" class="modal">
@@ -291,86 +224,97 @@
         <p>This confirmation will update your enrollment status to 'Paid' and count you in the class.</p>
         
         <div class="modal-buttons">
-            <!-- Form สำหรับส่งข้อมูลการยืนยันไปยัง Route ใหม่ -->
+            <!-- Form สำหรับส่งข้อมูลการยืนยันไปยัง Route confirm_payment -->
             <form id="paymentForm" method="POST" action="">
-                <button type="submit" id="confirmPaymentSubmitBtn">Yes, Confirm Payment</button>
+                <button type="submit" id="confirmPaymentSubmitBtn" class="btn btn-success">Yes, Confirm Payment</button>
             </form>
-            <button type="button" id="cancelPaymentBtn">Cancel</button>
+            <button type="button" id="cancelPaymentBtn" class="btn btn-secondary">Cancel</button>
         </div>
       </div>
     </div>
 
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const tabs = document.querySelectorAll('.tab-link');
-            const panes = document.querySelectorAll('.tab-pane');
-            const paymentModal = document.getElementById("paymentModal");
-            const cancelPaymentBtn = document.getElementById("cancelPaymentBtn");
-            const paymentForm = document.getElementById("paymentForm");
-            const modalClassName = document.getElementById("modalClassName");
-            const modalFeeAmount = document.getElementById("modalFeeAmount");
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const tabs  = document.querySelectorAll('.tab-link');
+      const panes = document.querySelectorAll('.tab-pane');
 
-            function switchTab(targetTab) {
-                // Remove active from all tabs and panes
-                tabs.forEach(tab => tab.classList.remove('active'));
-                panes.forEach(pane => pane.classList.remove('active'));
+      // Edit/View toggle elements
+      const viewBox  = document.getElementById('account-view');
+      const editBox  = document.getElementById('account-edit');
+      const btnEdit  = document.getElementById('btn-edit-account');
+      const btnCancel= document.getElementById('btn-cancel-edit');
+      
+      // Payment Modal elements
+      const paymentModal = document.getElementById("paymentModal");
+      const cancelPaymentBtn = document.getElementById("cancelPaymentBtn");
+      const paymentForm = document.getElementById("paymentForm");
+      const modalClassName = document.getElementById("modalClassName");
+      const modalFeeAmount = document.getElementById("modalFeeAmount");
 
-                // Set active on the clicked tab link
-                const activeLink = document.querySelector(`.tab-link[data-tab="${targetTab}"]`);
-                if (activeLink) {
-                    activeLink.classList.add('active');
-                }
 
-                // Set active on the target pane
-                const activePane = document.getElementById(targetTab);
-                if (activePane) {
-                    activePane.classList.add('active');
-                }
-            }
+      // --- Tab Switching Logic ---
+      function switchTab(targetTab) {
+        tabs.forEach(t => t.classList.remove('active'));
+        panes.forEach(p => p.classList.remove('active'));
 
-            // Tab Switching Logic
-            tabs.forEach(tab => {
-                tab.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const targetTab = this.getAttribute('data-tab');
-                    switchTab(targetTab);
-                    // Update URL hash without causing a page reload
-                    window.location.hash = targetTab; 
-                });
-            });
+        const link = document.querySelector(`.tab-link[data-tab="${targetTab}"]`);
+        const pane = document.getElementById(targetTab);
+        if (link) link.classList.add('active');
+        if (pane) pane.classList.add('active');
+      }
 
-            // Function to open the modal
-            window.openPaymentModal = function(cID, className, feeAmount) {
-                // Update modal content
-                modalClassName.textContent = className;
-                modalFeeAmount.textContent = feeAmount;
-                
-                // Update form action URL dynamically
-                // action should point to /student/profile/confirm_payment/<cID>
-                paymentForm.action = `{{ url_for('confirm_payment', cID=0) }}`.replace('/0', '/' + cID);
-                
-                // Show modal
-                paymentModal.style.display = "block";
-            };
-
-            // Modal Closing Logic
-            cancelPaymentBtn.onclick = function() {
-                paymentModal.style.display = "none";
-            }
-
-            // ปิด Modal เมื่อคลิกนอกกรอบ
-            window.onclick = function(event) {
-                if (event.target == paymentModal) {
-                    paymentModal.style.display = "none";
-                }
-            }
-
-            // Initial check for hash to load correct tab
-            // Loads 'general-info' by default
-            const initialTab = window.location.hash.substring(1) || 'general-info';
-            switchTab(initialTab);
+      tabs.forEach(tab => {
+        tab.addEventListener('click', function (e) {
+          e.preventDefault();
+          const target = this.getAttribute('data-tab');
+          switchTab(target);
+          history.replaceState(null, '', '#' + target);
         });
-    </script>
+      });
+
+      // Initial check for hash to load correct tab
+      const initial = window.location.hash.substring(1) || 'account-settings';
+      switchTab(initial);
+
+
+      // --- Edit/View Toggle Logic (Account Settings) ---
+      if (btnEdit) {
+        btnEdit.addEventListener('click', function () {
+          if (viewBox) viewBox.style.display = 'none';
+          if (editBox) editBox.style.display = 'block';
+        });
+      }
+      if (btnCancel) {
+        btnCancel.addEventListener('click', function () {
+          if (editBox) editBox.style.display = 'none';
+          if (viewBox) viewBox.style.display = 'block';
+        });
+      }
+      
+      // --- Payment Modal Logic ---
+      window.openPaymentModal = function(cID, instructorName, feeAmount) {
+          // Update modal content
+          modalClassName.textContent = instructorName;
+          modalFeeAmount.textContent = feeAmount;
+          
+          // Update form action URL dynamically
+          paymentForm.action = `{{ url_for('confirm_payment', cID=0) }}`.replace('/0', '/' + cID);
+          
+          // Show modal
+          paymentModal.style.display = "block";
+      };
+
+      cancelPaymentBtn.onclick = function() {
+          paymentModal.style.display = "none";
+      }
+
+      // ปิด Modal เมื่อคลิกนอกกรอบ
+      window.onclick = function(event) {
+          if (event.target == paymentModal) {
+              paymentModal.style.display = "none";
+          }
+      }
+    });
+  </script>
 </body>
 </html>

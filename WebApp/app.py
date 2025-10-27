@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash
 from LoginServices import LoginServices
 from InstructorDashboardServices import InstructorDashboardServices
 from StudentDashboardServices import StudentDashboardServices
@@ -262,9 +262,9 @@ def student_profile():
     sID = session.get('sID')
     sName = session.get('sName')
 
-    if not sID: return redirect(url_for('login_page'))
+    if not sID: 
+        return redirect(url_for('login_page'))
 
-    # **เรียกใช้ StudentProfileServices**
     profile_data = StudentProfileServices.get_full_profile(sID)
     payment_history = StudentProfileServices.get_payment_history(sID)
 
@@ -272,11 +272,65 @@ def student_profile():
         return render_template(
             'student_profile.html',
             student_name=sName,
-            profile=profile_data['profile'], # (sID, sName, sUsername)
+            profile=profile_data['profile'],
             enrolled_classes=profile_data['enrolled_classes'],
-            payment_history=payment_history # ข้อมูลประวัติการจ่าย
+            payment_history=payment_history
         )
     return "Error loading student profile data.", 500
+
+# --------------------------
+# Student Edit Profile (GET)
+# --------------------------
+@app.route('/student/profile/edit', methods=['GET'])
+def student_edit_profile():
+    sID = session.get('sID')
+    sName = session.get('sName')
+    if not sID:
+        return redirect(url_for('login_page'))
+
+    profile_data = StudentProfileServices.get_full_profile(sID)
+    payment_history = StudentProfileServices.get_payment_history(sID)
+
+    if profile_data and profile_data['profile']:
+        return render_template(
+            'student_profile.html',
+            student_name=sName,
+            profile=profile_data['profile'],
+            enrolled_classes=profile_data['enrolled_classes'],
+            payment_history=payment_history,
+            edit_mode=True
+        )
+    return "Error loading student profile for edit.", 500
+
+# ==== Student Account (Edit form submit) ====
+@app.route('/student/profile/update-account', methods=['POST'])
+def student_update_account():
+    # ... (โค้ดตรวจสอบ Session เดิม) ...
+    sID = session.get('sID')
+    if not sID:
+        flash('กรุณาเข้าสู่ระบบ', 'error')
+        return redirect(url_for('login_page'))
+
+    sName     = request.form.get('sName')
+    sUsername = request.form.get('sUsername')
+    sPassword = request.form.get('sPassword') # รับค่า password (อาจเป็น String ว่าง)
+
+    # 1. เรียกใช้ Service เพื่ออัปเดตข้อมูล
+    success = StudentProfileServices.update_profile(
+        sID=sID,
+        sName=sName,
+        sUsername=sUsername,
+        sPassword=sPassword # ส่งรหัสผ่านไป (Service จะจัดการถ้าค่าเป็นว่าง)
+    )
+
+    if success:
+        # อัปเดตชื่อใน Session ถ้ามีการเปลี่ยนชื่อ
+        session['sName'] = sName 
+        flash('ข้อมูลบัญชีถูกอัปเดตเรียบร้อยแล้ว', 'success')
+    else:
+        flash('เกิดข้อผิดพลาดในการอัปเดตข้อมูล (ชื่อผู้ใช้อาจซ้ำ)', 'error')
+
+    return redirect(url_for('student_profile') + '#account-settings')
 
 # =================================================================
 # [ADDED] Register routes
