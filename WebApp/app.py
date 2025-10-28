@@ -142,7 +142,7 @@ def update_instructor():
         profile_url=profile_url,
         reward_url=reward_url,
         video_url=video_url,
-        subjectID=subjectID # NEW: Subject ID
+        subjectID=subjectID
     )
     
     if success:
