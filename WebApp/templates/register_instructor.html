@@ -125,7 +125,6 @@
     <div class="row">
       <label for="name">Full name</label>
       <input id="name" name="name" required />
-      <div class="hint">Saved to Instructor.iName</div>
     </div>
 
     <div class="row">
@@ -137,25 +136,21 @@
           <option value="{{ subj[0] }}">{{ subj[1] }}</option>
         {% endfor %}
       </select>
-      <div class="hint">Saved to Instructor.sID</div>
     </div>
 
     <div class="row">
       <label for="exp_year">Years of experience</label>
       <input id="exp_year" type="number" min="0" name="exp_year" required />
-      <div class="hint">Saved to Instructor.expYear</div>
     </div>
 
     <div class="row two-col">
       <div class="col">
         <label for="username">Username</label>
         <input id="username" name="username" required />
-        <div class="hint">Saved to Instructor.iUsername (must be unique)</div>
       </div>
       <div class="col">
         <label for="password">Password</label>
         <input id="password" type="password" name="password" required />
-        <div class="hint">Saved to Instructor.iPassword</div>
       </div>
     </div>
 
@@ -165,13 +160,11 @@
     <div class="row">
       <label for="center_name">Center name</label>
       <input id="center_name" name="center_name" required />
-      <div class="hint">Saved to TutoringCenter.tName</div>
     </div>
 
     <div class="row">
       <label for="center_address">Address / Location</label>
       <textarea id="center_address" name="center_address" required></textarea>
-      <div class="hint">Saved to TutoringCenter.address</div>
     </div>
 
     <!-- =========== SECTION 3: First Class Slot =========== -->
@@ -190,13 +183,11 @@
           <option>Saturday</option>
           <option>Sunday</option>
         </select>
-        <div class="hint">Saved to ClassSlot.cDay</div>
       </div>
 
       <div class="col">
         <label for="class_time">Time range</label>
         <input id="class_time" name="class_time" placeholder="09:00 - 10:30" required />
-        <div class="hint">Saved to ClassSlot.cTime</div>
       </div>
     </div>
 
@@ -204,13 +195,11 @@
       <div class="col">
         <label for="max_students">Max seats</label>
         <input id="max_students" type="number" min="1" name="max_students" required />
-        <div class="hint">Saved to ClassSlot.studentMax</div>
       </div>
 
       <div class="col">
         <label for="class_price">Price (THB)</label>
         <input id="class_price" type="number" min="0" name="class_price" required />
-        <div class="hint">Saved to ClassSlot.price</div>
       </div>
     </div>
 
