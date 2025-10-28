@@ -8,9 +8,11 @@
         .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
         h1 { color: #007bff; margin-bottom: 25px; }
         
-        .form-group { margin-bottom: 15px; display: flex; align-items: center; }
+        .form-group { margin-bottom: 15px; display: flex; align-items: center; flex-wrap: wrap; }
         .form-group label { font-weight: bold; width: 180px; flex-shrink: 0; }
-        .form-group input[type="text"], .form-group input[type="password"], .form-group select { 
+        .form-group input[type="text"],
+        .form-group input[type="password"],
+        .form-group select { 
             flex-grow: 1; 
             padding: 10px; 
             border: 1px solid #ccc; 
@@ -23,23 +25,29 @@
             border-top: 1px solid #eee; 
             padding-top: 20px; 
             display: flex; 
-            justify-content: space-between; /* จัดปุ่ม Save/Cancel และ Delete ให้อยู่คนละฝั่ง */
+            justify-content: space-between;
             align-items: center; 
+            flex-wrap: wrap;
+            gap: 12px;
         }
-        .save-btn, .cancel-btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; }
-        .save-btn { background-color: #28a745; color: white; margin-left: 10px; }
+        .save-btn, .cancel-btn {
+            padding: 10px 20px;
+            border: none; 
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .save-btn { background-color: #28a745; color: white; }
         .cancel-btn { background-color: #6c757d; color: white; text-decoration: none; }
-        
-        /* สไตล์สำหรับปุ่ม Delete และ Modal */
+
         .delete-btn { background-color: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; }
         .delete-btn:hover { background-color: #c82333; }
 
-        /* Modal Styles */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
+        /* Modal */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); }
         .modal-content { background-color: #fefefe; margin: 15% auto; padding: 25px; border: 1px solid #888; width: 80%; max-width: 400px; border-radius: 10px; text-align: center; }
-        .modal-buttons-delete { margin-top: 20px; display: flex; justify-content: center; gap: 15px; }
+        .modal-buttons-delete { margin-top: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
         .modal-buttons-delete button { padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; }
-
     </style>
 </head>
 <body>
@@ -55,23 +63,23 @@
                 <input type="hidden" name="tID" value="{{ data.managed_center[2] }}"> 
             {% endif %}
 
-            <!-- ส่ง mediaID ไปด้วย (คอลัมน์ที่ 5 จาก data.profile: data.profile[5]) -->
+            <!-- mediaID (ไม่ได้ใช้ตรง ๆ ใน service ตอนนี้ แต่เก็บไว้เผื่ออนาคต) -->
             <input type="hidden" name="mediaID" value="{{ data.profile[5] }}"> 
 
             <h3>Instructor Profile</h3>
             
             <div class="form-group">
                 <label for="iName">Name:</label>
-                <!-- สมมติว่า instructor_name ถูกส่งมาจาก Flask route -->
+                <!-- ใช้ชื่อ instructor ปัจจุบัน -->
                 <input type="text" id="iName" name="iName" value="{{ instructor_name }}" required> 
             </div>
             
-            <!-- NEW: Dropdown สำหรับ Subject -->
+            <!-- Subject Dropdown -->
             <div class="form-group">
                 <label for="subjectID">Subject:</label>
-                <!-- NOTE: subject_list และ data.profile[7] (current_subject_id) ต้องถูกส่งมาจาก Flask route -->
                 <select id="subjectID" name="subjectID" required>
-                    {% set current_subject_id = data.profile[7] %} 
+                    {# [FIX] ใช้ data.profile[8] เป็น subjectID ปัจจุบัน แทน [7] #}
+                    {% set current_subject_id = data.profile[8] %}
                     {% for sid, sname in subject_list %}
                         <option value="{{ sid }}" {% if sid == current_subject_id %}selected{% endif %}>
                             {{ sname }}
@@ -79,48 +87,40 @@
                     {% endfor %}
                 </select>
             </div>
-            <!-- /NEW: Dropdown สำหรับ Subject -->
-
 
             <h3 style="margin-top: 30px;">Security & Account</h3>
 
-            <!-- NEW: ช่องกรอก Username -->
             <div class="form-group">
                 <label for="iUsername">Username:</label>
-                <!-- สมมติว่า Username ถูกดึงมาจาก data.profile[7] -->
+                <!-- data.profile[7] = iUsername -->
                 <input type="text" id="iUsername" name="iUsername" value="{{ data.profile[7] }}" required>
             </div>
             
-            <!-- NEW: ช่องกรอก Password -->
             <div class="form-group">
                 <label for="iPassword">New Password:</label>
-                <!-- Password จะถูกส่งมาเป็นค่าว่าง ถ้าไม่ได้กรอก -->
+                <!-- ถ้าปล่อยว่าง จะไม่ overwrite password เดิม -->
                 <input type="password" id="iPassword" name="iPassword" placeholder="Leave blank to keep current password">
             </div>
 
             <h3 style="margin-top: 30px;">Media URLs</h3>
 
-            <!-- 1. ช่องกรอก Profile Image URL -->
-            <!-- สมมติว่า Profile Image URL คือ data.profile[3] -->
             <div class="form-group">
                 <label for="profile_url">Profile Image URL:</label>
-                <input type="text" id="profile_url" name="profile_url" value="{{ data.profile[3] }}" required>
+                <!-- data.profile[3] = imageProfile -->
+                <input type="text" id="profile_url" name="profile_url" value="{{ data.profile[3] or '' }}">
             </div>
             
-            <!-- 2. ช่องกรอก Reward URL -->
-            <!-- สมมติว่า Reward URL คือ data.profile[4] -->
             <div class="form-group">
                 <label for="reward_url">Reward/Cert URL:</label>
-                <input type="text" id="reward_url" name="reward_url" value="{{ data.profile[4] }}" required>
+                <!-- data.profile[4] = rewardURL -->
+                <input type="text" id="reward_url" name="reward_url" value="{{ data.profile[4] or '' }}">
             </div>
 
-            <!-- 3. ช่องกรอก Video URL -->
-            <!-- สมมติว่า Video URL คือ data.profile[6] -->
             <div class="form-group">
                 <label for="video_url">Video URL:</label>
-                <input type="text" id="video_url" name="video_url" value="{{ data.profile[6] }}" required>
+                <!-- data.profile[6] = videoURL -->
+                <input type="text" id="video_url" name="video_url" value="{{ data.profile[6] or '' }}">
             </div>
-
 
             {% if data.managed_center %}
                 <h3 style="margin-top: 30px;">Center Details (Center Manager)</h3>
@@ -138,11 +138,12 @@
 
             <div class="button-group">
                 <div>
-                    <!-- NEW: ปุ่ม Delete Account -->
+                    <!-- ปุ่มลบบัญชี (modal) -->
                     <button type="button" class="delete-btn" id="openDeleteModal">DELETE ACCOUNT</button>
                 </div>
                 <div>
                     <a href="{{ url_for('instructor_dashboard') }}" class="cancel-btn">Cancel</a>
+                    <!-- ปุ่ม submit ฟอร์ม -->
                     <button type="submit" class="save-btn">Save Changes</button>
                 </div>
             </div>
@@ -156,16 +157,9 @@
             <p>Are you sure you want to permanently delete your account?</p>
             <p style="color: red; font-weight: bold;">This action cannot be undone.</p>
             <div class="modal-buttons-delete">
-                <!-- 
-                    IMPORTANT: Form นี้จะส่งคำขอไปยังเซิร์ฟเวอร์
-                    เซิร์ฟเวอร์ (ใน app.py) ต้อง:
-                    1. เรียกใช้ InstructorEditDashboardServices.delete_account(iID)
-                    2. หากสำเร็จ (True) ต้องทำการ log out ผู้ใช้ (เช่น session.pop('iID', None))
-                    3. ต้อง redirect ผู้ใช้ไปยังหน้า Login (เช่น return redirect(url_for('login_page')) )
-                -->
                 <form id="deleteForm" method="POST" action="{{ url_for('delete_instructor_account') }}">
                     <input type="hidden" name="iID" value="{{ session.get('iID') }}">
-                    <button type="submit" class="delete-btn">Yes, Delete Account</button>
+                    <button type="submit" class="delete-btn" style="background-color:#dc3545;color:white;">Yes, Delete Account</button>
                 </form>
                 <button type="button" class="cancel-btn" id="closeDeleteModal">Cancel</button>
             </div>
@@ -173,7 +167,7 @@
     </div>
     
     <script>
-        // Modal Logic for Delete Account
+        // Modal Logic for Delete Account (เหมือนเดิม)
         document.addEventListener('DOMContentLoaded', function() {
             const deleteModal = document.getElementById('deleteModal');
             const openDeleteModalBtn = document.getElementById('openDeleteModal');
@@ -191,7 +185,6 @@
                 };
             }
             
-            // ปิด Modal เมื่อคลิกนอก Modal
             window.onclick = function(event) {
                 if (event.target == deleteModal) {
                     deleteModal.style.display = 'none';

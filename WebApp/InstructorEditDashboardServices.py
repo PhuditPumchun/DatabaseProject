@@ -1,17 +1,13 @@
-# InstructorEditDashboardServices.py
-
 import os
 import psycopg2
 from dotenv import load_dotenv
 
 load_dotenv()
 
-
 class InstructorEditDashboardServices:
 
     @staticmethod
     def _get_db_connection():
-        """สร้างและคืนค่า Connection Object ไปยังฐานข้อมูล PostgreSQL"""
         try:
             conn = psycopg2.connect(
                 dbname=os.getenv('DB_NAME'),
@@ -29,108 +25,165 @@ class InstructorEditDashboardServices:
     def update_data(
         iID,
         tID=None,
-        iName=None,
-        tName=None,
-        address=None,
         mediaID=None,
+        iName=None,
         iUsername=None,
         iPassword=None,
+        tName=None,
+        address=None,
         profile_url=None,
         reward_url=None,
         video_url=None,
-        subjectID=None, # NEW: เพิ่ม subjectID
+        subjectID=None,
     ):
-        """อัปเดตข้อมูล Instructor / TutoringCenter / InstructorMedia เฉพาะฟิลด์ที่ส่งมา"""
+        """
+        อัปเดตข้อมูล Instructor / TutoringCenter / InstructorMedia ให้เสร็จในทรานแซคชันเดียว
+        - ถ้าไม่ได้ใส่รหัสผ่านใหม่ จะไม่แก้ iPassword
+        - ถ้า InstructorMedia ไม่มี row เดิม → INSERT ใหม่ พร้อม mediaID ไม่เป็น NULL
+        """
+
         conn = InstructorEditDashboardServices._get_db_connection()
         if not conn:
             return False
 
         try:
-            cursor = conn.cursor()
+            cur = conn.cursor()
 
-            # --- 1) UPDATE Instructor (Name, Username, Password, Subject) ---
-            set_cols, params = [], []
+            # -------------------------------------------------
+            # 1) UPDATE Instructor
+            # -------------------------------------------------
+            set_cols = []
+            params = []
+
             if iName is not None:
                 set_cols.append("iName = %s")
                 params.append(iName)
+
             if iUsername is not None:
                 set_cols.append("iUsername = %s")
                 params.append(iUsername)
+
+            # อัปเดต password เฉพาะถ้ากรอกใหม่
             if iPassword and iPassword.strip() != "":
                 set_cols.append("iPassword = %s")
                 params.append(iPassword)
-            if subjectID is not None:
-                 set_cols.append("sID = %s")
-                 params.append(subjectID)
 
+            # อัปเดต subject (sID) ด้วยค่า subjectID จาก dropdown
+            if subjectID is not None:
+                set_cols.append("sID = %s")
+                params.append(subjectID)
 
             if set_cols:
                 sql = "UPDATE Instructor SET " + ", ".join(set_cols) + " WHERE iID = %s;"
                 params.append(iID)
-                cursor.execute(sql, tuple(params))
+                cur.execute(sql, tuple(params))
 
-            # --- 2) UPDATE TutoringCenter (Name, Address) ---
-            tc_cols, tc_params = [], []
+            # -------------------------------------------------
+            # 2) UPDATE TutoringCenter (เฉพาะศูนย์ที่ instructor คนนี้ดูแล)
+            # -------------------------------------------------
+            tc_cols = []
+            tc_params = []
+
             if tName is not None:
                 tc_cols.append("tName = %s")
                 tc_params.append(tName)
+
             if address is not None:
                 tc_cols.append("address = %s")
                 tc_params.append(address)
 
             if tID is not None and tc_cols:
-                sql = (
+                sql_center = (
                     "UPDATE TutoringCenter t SET "
                     + ", ".join(tc_cols)
                     + " WHERE tID = %s "
                     + "AND EXISTS (SELECT 1 FROM CenterManager WHERE tID = t.tID AND iID = %s);"
                 )
                 tc_params.extend([tID, iID])
-                cursor.execute(sql, tuple(tc_params))
+                cur.execute(sql_center, tuple(tc_params))
 
-            # --- 3) UPDATE or INSERT (UPSERT Logic Manual) InstructorMedia (URLs) ---
-            media_cols, media_params = [], []
-            if profile_url is not None:
-                media_cols.append("imageProfile = %s")
-                media_params.append(profile_url)
-            if reward_url is not None:
-                media_cols.append("rewardURL = %s")
-                media_params.append(reward_url)
-            if video_url is not None:
-                media_cols.append("videoURL = %s")
-                media_params.append(video_url)
-                
-            if media_cols:
-                # 3a. ลองทำการ UPDATE ก่อน (หากมีแถวอยู่แล้ว)
-                sql_update = (
-                    "UPDATE InstructorMedia SET "
-                    + ", ".join(media_cols)
-                    + " WHERE iID = %s;"
-                )
-                
-                update_params = media_params + [iID]
-                cursor.execute(sql_update, tuple(update_params))
-                
-                # 3b. ถ้า UPDATE ไม่สำเร็จ (แถวไม่พบ - rowcount == 0) ให้ทำการ INSERT
-                if cursor.rowcount == 0:
-                    # SQL สำหรับ INSERT:
-                    sql_insert = """
-                        INSERT INTO InstructorMedia (iID, imageProfile, rewardURL, videoURL)
-                        VALUES (%s, %s, %s, %s);
-                    """
-                    # ใช้ค่าที่ส่งมา (ใช้ '' แทน None เพื่อป้องกัน NOT NULL error)
-                    insert_values_final = [
+            # -------------------------------------------------
+            # 3) UPSERT InstructorMedia
+            # -------------------------------------------------
+
+            # ถ้าไม่มีการแก้ media เลย ก็ข้าม
+            touched_media = (
+                profile_url is not None or
+                reward_url  is not None or
+                video_url   is not None
+            )
+
+            if touched_media:
+                # ก่อนอื่นเช็กว่ามี row ของ instructor นี้อยู่แล้วหรือยัง
+                cur.execute("SELECT mediaID FROM InstructorMedia WHERE iID = %s;", (iID,))
+                row = cur.fetchone()
+
+                if row:
+                    # มีอยู่แล้ว -> UPDATE
+                    existing_media_id = row[0]
+
+                    media_set_cols = []
+                    media_set_params = []
+
+                    if profile_url is not None:
+                        media_set_cols.append("imageProfile = %s")
+                        media_set_params.append(profile_url)
+
+                    if reward_url is not None:
+                        media_set_cols.append("rewardURL = %s")
+                        media_set_params.append(reward_url)
+
+                    if video_url is not None:
+                        media_set_cols.append("videoURL = %s")
+                        media_set_params.append(video_url)
+
+                    if media_set_cols:
+                        sql_media_update = (
+                            "UPDATE InstructorMedia SET "
+                            + ", ".join(media_set_cols)
+                            + " WHERE mediaID = %s AND iID = %s;"
+                        )
+                        media_set_params.extend([existing_media_id, iID])
+                        cur.execute(sql_media_update, tuple(media_set_params))
+
+                else:
+                    # ยังไม่มี row -> ต้อง INSERT ใหม่พร้อม mediaID ที่ไม่เป็น NULL
+                    # 1) หา mediaID ที่จะใช้
+                    new_media_id = None
+
+                    # ใช้ค่าจากฟอร์มถ้ามีส่งมา (hidden input mediaID)
+                    if mediaID and str(mediaID).strip() != "":
+                        try:
+                            new_media_id = int(mediaID)
+                        except ValueError:
+                            new_media_id = None
+
+                    # ถ้าไม่มี หรือไม่ใช่เลข -> สร้างใหม่จาก MAX(mediaID)+1
+                    if new_media_id is None:
+                        cur.execute("SELECT COALESCE(MAX(mediaID)+1, 1) FROM InstructorMedia;")
+                        new_media_id = cur.fetchone()[0]
+
+                    # เตรียมค่าที่จะ insert (ถ้า field ว่างในฟอร์ม เราจะเก็บเป็น '' ไม่ใช่ None ป้องกันปัญหา NOT NULL บางคอลัมน์)
+                    insert_image   = profile_url if profile_url is not None else ''
+                    insert_reward  = reward_url  if reward_url  is not None else ''
+                    insert_video   = video_url   if video_url   is not None else ''
+
+                    cur.execute("""
+                        INSERT INTO InstructorMedia (mediaID, iID, imageProfile, rewardURL, videoURL)
+                        VALUES (%s, %s, %s, %s, %s);
+                    """, (
+                        new_media_id,
                         iID,
-                        profile_url or '', 
-                        reward_url or '',
-                        video_url or ''
-                    ]
-                    
-                    cursor.execute(sql_insert, tuple(insert_values_final))
+                        insert_image,
+                        insert_reward,
+                        insert_video
+                    ))
 
-
+            # -------------------------------------------------
+            # commit
+            # -------------------------------------------------
             conn.commit()
-            cursor.close()
+            cur.close()
             return True
 
         except psycopg2.Error as e:
@@ -138,60 +191,7 @@ class InstructorEditDashboardServices:
                 conn.rollback()
             print(f"SQL execution error during update: {e}")
             return False
-        finally:
-            if conn:
-                conn.close()
-    
-    # --- EDITED: เมธอดสำหรับลบบัญชี (รวมการลบ Center, ClassSlot, Enrollment) ---
-    @staticmethod
-    def delete_account(iID):
-        """
-        ลบ Instructor และข้อมูลที่เกี่ยวข้องทั้งหมด:
-        1. ลบ ClassSlot ในศูนย์ที่ Instructor บริหาร (Enrollment ถูกลบโดย CASCADE)
-        2. ลบ TutoringCenter ที่ Instructor บริหาร
-        3. ลบ Instructor (ลบ CenterManager, InstructorMedia โดย CASCADE)
-        """
-        conn = InstructorEditDashboardServices._get_db_connection()
-        if not conn:
-            return False
 
-        try:
-            with conn.cursor() as cursor:
-                
-                # 1. ค้นหา tID ของศูนย์ที่ Instructor คนนี้บริหารอยู่
-                cursor.execute(
-                    "SELECT tID FROM CenterManager WHERE iID = %s;", 
-                    (iID,)
-                )
-                center_manager_tID = cursor.fetchone()
-                
-                if center_manager_tID:
-                    tID = center_manager_tID[0]
-                    
-                    # 2. ลบ ClassSlot ทั้งหมดใน Center นั้น
-                    #    (หาก Enrollment มี CASCADE จาก ClassSlot, ข้อมูล Enroll จะถูกลบ)
-                    cursor.execute(
-                        "DELETE FROM ClassSlot WHERE tID = %s;",
-                        (tID,)
-                    )
-                    
-                    # 3. ลบ TutoringCenter ที่ Instructor บริหาร
-                    cursor.execute(
-                        "DELETE FROM TutoringCenter WHERE tID = %s;",
-                        (tID,)
-                    )
-                
-                # 4. ลบ Instructor
-                #    (InstructorMedia และ CenterManager จะถูกลบโดย Foreign Key CASCADE)
-                cursor.execute("DELETE FROM Instructor WHERE iID = %s;", (iID,))
-            
-            conn.commit()
-            return True
-        except psycopg2.Error as e:
-            print(f"SQL execution error during delete account: {e}")
-            if conn:
-                conn.rollback()
-            return False
         finally:
             if conn:
                 conn.close()
